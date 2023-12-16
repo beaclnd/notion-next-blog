@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 
 import cs from 'classnames'
 import { PageBlock } from 'notion-types'
-import { formatDate, getBlockTitle, getPageProperty } from 'notion-utils'
+import { formatDate, getBlockTitle, getPageProperty, normalizeTitle} from 'notion-utils'
 import BodyClassName from 'react-body-classname'
 import { NotionRenderer } from 'react-notion-x'
 import TweetEmbed from 'react-tweet-embed'
@@ -26,7 +26,9 @@ import { NotionPageHeader } from './NotionPageHeader'
 import { Page404 } from './Page404'
 import { PageAside } from './PageAside'
 import { PageHead } from './PageHead'
+import { Pagination } from './Pagination'
 import styles from './styles.module.css'
+import MoveToTopButton from './MoveToTopButton'
 
 // -----------------------------------------------------------------------------
 // dynamic imports for optional components
@@ -106,9 +108,11 @@ const propertyLastEditedTimeValue = (
   defaultFn: () => React.ReactNode
 ) => {
   if (pageHeader && block?.last_edited_time) {
-    return `Last updated ${formatDate(block?.last_edited_time, {
-      month: 'long'
-    })}`
+    // return `Last updated ${formatDate(block?.last_edited_time, {
+    //   month: 'long'
+    // })}`
+    const lastEditedTime = new Date(block?.last_edited_time);
+    return `修改：${lastEditedTime.getFullYear()}-${String(lastEditedTime.getMonth() + 1).padStart(2, '0')}-${String(lastEditedTime.getDate()).padStart(2, '0')}`
   }
 
   return defaultFn()
@@ -122,9 +126,11 @@ const propertyDateValue = (
     const publishDate = data?.[0]?.[1]?.[0]?.[1]?.start_date
 
     if (publishDate) {
-      return `${formatDate(publishDate, {
-        month: 'long'
-      })}`
+      // return `${formatDate(publishDate, {
+      //   month: 'long'
+      // })}`
+
+      return `发布：${publishDate}`
     }
   }
 
@@ -142,11 +148,31 @@ const propertyTextValue = (
   return defaultFn()
 }
 
+const propertySelectValue = (
+  { schema, value, key, pageHeader }, 
+  defaultFn: () => React.ReactNode
+) => {
+  const normalizedValue = normalizeTitle(value)
+  if (pageHeader && schema?.type === 'multi_select' && normalizedValue) {
+    return (
+      <Link href={`/tags/${normalizedValue}`} key={key}>
+        <a>{defaultFn()}</a>
+      </Link>
+    )
+  }
+
+  return defaultFn()
+}
+
 export const NotionPage: React.FC<types.PageProps> = ({
   site,
   recordMap,
   error,
-  pageId
+  pageId,
+  tagsPage,
+  propertyToFilterName,
+  curPage,
+  totalPosts
 }) => {
   const router = useRouter()
   const lite = useSearchParam('lite')
@@ -164,7 +190,8 @@ export const NotionPage: React.FC<types.PageProps> = ({
       Header: NotionPageHeader,
       propertyLastEditedTimeValue,
       propertyTextValue,
-      propertyDateValue
+      propertyDateValue,
+      propertySelectValue
     }),
     []
   )
@@ -200,7 +227,22 @@ export const NotionPage: React.FC<types.PageProps> = ({
     [block, recordMap, isBlogPost]
   )
 
+  const pageFooter = React.useMemo(
+    () => (
+      <Pagination curPage={curPage} totalPosts={totalPosts} />
+    ), 
+    [curPage, totalPosts]
+  )
+
   const footer = React.useMemo(() => <Footer />, [])
+
+  // To modify the default table of contents header of the page aside to meet my need
+  React.useEffect(() => {
+    const TableOfContentsHeader = document.querySelector(".notion-aside-table-of-contents-header");
+    if (TableOfContentsHeader) {
+      TableOfContentsHeader.innerHTML = '目录';
+    }
+  }, [isBlogPost]);
 
   if (router.isFallback) {
     return <Loading />
@@ -210,7 +252,8 @@ export const NotionPage: React.FC<types.PageProps> = ({
     return <Page404 site={site} pageId={pageId} error={error} />
   }
 
-  const title = getBlockTitle(block, recordMap) || site.name
+  const name = getBlockTitle(block, recordMap) || site.name
+  const title = tagsPage && propertyToFilterName ? `标签：${propertyToFilterName}` : name
 
   console.log('notion page', {
     isDev: config.isDev,
@@ -259,7 +302,8 @@ export const NotionPage: React.FC<types.PageProps> = ({
       <NotionRenderer
         bodyClassName={cs(
           styles.notion,
-          pageId === site.rootNotionPageId && 'index-page'
+          pageId === site.rootNotionPageId && 'index-page',
+          tagsPage && 'tags-page'
         )}
         darkMode={isDarkMode}
         components={components}
@@ -278,8 +322,12 @@ export const NotionPage: React.FC<types.PageProps> = ({
         mapImageUrl={mapImageUrl}
         searchNotion={config.isSearchEnabled ? searchNotion : null}
         pageAside={pageAside}
+        pageTitle={tagsPage && propertyToFilterName ? title : undefined}
+        pageFooter={pageFooter}
         footer={footer}
       />
+
+      <MoveToTopButton />
 
       <GitHubShareButton />
     </>

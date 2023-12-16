@@ -2,23 +2,23 @@ import { siteConfig } from './lib/site-config'
 
 export default siteConfig({
   // the site's root Notion page (required)
-  rootNotionPageId: 'https://infrequent-canopy-85d.notion.site/Next-js-Notion-Starter-Kit-Template-479140cbc8b44b2fb00776aec4b39e16?pvs=4',
+  rootNotionPageId: '479140cbc8b44b2fb00776aec4b39e16',
 
   // if you want to restrict pages to a single notion workspace (optional)
   // (this should be a Notion ID; see the docs for how to extract this)
   rootNotionSpaceId: null,
 
   // basic site info (required)
-  name: 'beaclnd92\'s Blogs',
+  name: 'beaclnd\'s Blogs',
   domain: 'nextjs-notion-starter-kit.transitivebullsh.it',
-  author: 'beaclnd92',
+  author: 'beaclnd',
 
   // open graph metadata (optional)
   description: 'Something sharing on beaclnd92\'s Blogs',
 
   // social usernames (optional)
   // twitter: 'transitive_bs',
-  github: 'beaclnd92',
+  github: 'beaclnd',
   // linkedin: 'fisch2',
   // mastodon: '#', // optional mastodon profile URL, provides link verification
   // newsletter: '#', // optional newsletter URL
@@ -50,8 +50,8 @@ export default siteConfig({
 
   // whether to use the default notion navigation style or a custom one with links to
   // important pages
-  navigationStyle: 'default'
-  // navigationStyle: 'custom',
+  // navigationStyle: 'default'
+  navigationStyle: 'custom',
   // navigationLinks: [
   //   {
   //     title: 'About',
@@ -62,4 +62,7 @@ export default siteConfig({
   //     pageId: '6a29ebcb935a4f0689fe661ab5f3b8d1'
   //   }
   // ]
+
+  // The max post count for each page
+  postsPerPage: 5 
 })

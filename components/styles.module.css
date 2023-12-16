@@ -38,6 +38,40 @@
   align-items: center;
 }
 
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+.pagination .spacer {
+  flex: 1;
+}
+.pagination .a {
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: inherit;
+  transition: background-color 0.3s ease;
+}
+.pagination .a:hover {
+  background-color: #fc7d42;
+}
+
+.move-to-top-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: rgb(112, 183, 253);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.move-to-top-btn:hover {
+  background-color: #fc7d42;
+}
+
 .errorImage {
   max-width: 100%;
   width: 640px;

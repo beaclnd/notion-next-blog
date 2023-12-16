@@ -21,8 +21,27 @@
   line-height: 1.65;
 }
 
-.index-page {
+.index-page,
+.tags-page {
   --notion-max-width: 900px;
+}
+
+.tags-page .notion-collection-header {
+  display: none;
+}
+
+.tags-page .notion-gallery {
+  padding-top: 2em;
+}
+
+.tags-page .notion-gallery-grid {
+  padding-top: 4em;
+}
+
+.tags-page .notion-title {
+  color: rgba(128, 0, 0, 0.79);
+  background-color: gainsboro;
+  border-radius: 8px;
 }
 
 .notion-text {

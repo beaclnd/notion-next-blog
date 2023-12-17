@@ -63,7 +63,7 @@ export async function getStaticPaths() {
         // The index page is the page 1, so starting with index 2
         const paths = Array.from(
             { length: totalPages - 1 }, 
-            (_, i) => ({ params: { pageIndex: i + 2 } })
+            (_, i) => ({ params: { pageIndex: i + 2 + '' } })
         )
         return {
             paths,

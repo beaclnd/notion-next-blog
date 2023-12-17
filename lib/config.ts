@@ -174,6 +174,9 @@ export const posthogConfig: Partial<PostHogConfig> = {
   api_host: 'https://app.posthog.com'
 }
 
+export const isGiscusEnabled = getSiteConfig('isGiscusEnabled', false) 
+export const giscus = getSiteConfig('giscus', {}) 
+
 function cleanPageUrlMap(
   pageUrlMap: PageUrlOverridesMap,
   {

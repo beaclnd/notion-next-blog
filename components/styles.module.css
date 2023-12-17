@@ -57,6 +57,11 @@
   background-color: #fc7d42;
 }
 
+.comment {
+  width: 100%;
+  padding-top: 3.68vh;
+}
+
 .move-to-top-btn {
   position: fixed;
   bottom: 20px;

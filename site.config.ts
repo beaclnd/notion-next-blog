@@ -14,7 +14,7 @@ export default siteConfig({
   author: 'beaclnd',
 
   // open graph metadata (optional)
-  description: 'Something sharing on beaclnd92\'s Blogs',
+  description: 'Something sharing on beaclnd\'s Blogs',
 
   // social usernames (optional)
   // twitter: 'transitive_bs',
@@ -64,5 +64,18 @@ export default siteConfig({
   // ]
 
   // The max post count for each page
-  postsPerPage: 5 
+  postsPerPage: 5,
+
+  // For the giscus
+  isGiscusEnabled: true,
+  giscus: {
+    repo: 'beaclnd/blog-giscus', 
+    repoId: 'R_kgDOK5xqJQ',
+    category: 'Announcements',
+    categoryId: 'DIC_kwDOK5xqJc4CbvMp',
+    mapping: 'pathname',
+    reactionsEnabled: '0',
+    emitMetadata: '0',
+    inputPosition: 'bottom'
+  }
 })

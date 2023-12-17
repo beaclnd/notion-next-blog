@@ -1,3 +1,4 @@
+import type { Mapping, BooleanString, InputPosition } from '@giscus/react'
 import * as types from './types'
 
 export interface SiteConfig {
@@ -35,12 +36,25 @@ export interface SiteConfig {
   navigationLinks?: Array<NavigationLink>
 
   postsPerPage?: number
+  isGiscusEnabled?: boolean
+  giscus?: GiscusConf
 }
 
 export interface NavigationLink {
   title: string
   pageId?: string
   url?: string
+}
+
+export interface GiscusConf {
+  repo: string
+  repoId: string
+  category: string
+  categoryId: string
+  mapping: Mapping
+  reactionsEnabled: BooleanString 
+  emitMetadata: BooleanString 
+  inputPosition: InputPosition
 }
 
 export const siteConfig = (config: SiteConfig): SiteConfig => {

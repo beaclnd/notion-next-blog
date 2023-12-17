@@ -29,6 +29,7 @@ import { PageHead } from './PageHead'
 import { Pagination } from './Pagination'
 import styles from './styles.module.css'
 import MoveToTopButton from './MoveToTopButton'
+import { GiscusComment } from './Comment'
 
 // -----------------------------------------------------------------------------
 // dynamic imports for optional components
@@ -216,7 +217,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
   //   parsePageId(block?.id) === parsePageId(site?.rootNotionPageId)
   const isBlogPost =
     block?.type === 'page' && block?.parent_table === 'collection'
-
+  
   const showTableOfContents = !!isBlogPost
   const minTableOfContentsItems = 3
 
@@ -229,9 +230,12 @@ export const NotionPage: React.FC<types.PageProps> = ({
 
   const pageFooter = React.useMemo(
     () => (
-      <Pagination curPage={curPage} totalPosts={totalPosts} />
+      <>
+        { !isBlogPost && <Pagination curPage={curPage} totalPosts={totalPosts} />}
+        { config.isGiscusEnabled && isBlogPost && <GiscusComment pageId={pageId} isDarkMode={isDarkMode} />}
+      </>
     ), 
-    [curPage, totalPosts]
+    [curPage, totalPosts, isBlogPost, isDarkMode]
   )
 
   const footer = React.useMemo(() => <Footer />, [])
@@ -329,7 +333,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
 
       <MoveToTopButton />
 
-      <GitHubShareButton />
+      {/* <GitHubShareButton /> */}
     </>
   )
 }

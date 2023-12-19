@@ -260,13 +260,15 @@ export const NotionPage: React.FC<types.PageProps> = ({
   const name = getBlockTitle(block, recordMap) || site.name
   const title = tagsPage && propertyToFilterName ? `标签：${propertyToFilterName}` : name
 
-  console.log('notion page', {
-    isDev: config.isDev,
-    title,
-    pageId,
-    rootNotionPageId: site.rootNotionPageId,
-    recordMap
-  })
+  if (config.isDev) {
+    console.log('notion page', {
+      isDev: config.isDev,
+      title,
+      pageId,
+      rootNotionPageId: site.rootNotionPageId,
+      recordMap
+    })
+  }
 
   if (!config.isServer) {
     // add important objects to the window global for easy debugging

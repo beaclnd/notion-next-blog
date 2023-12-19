@@ -10,7 +10,7 @@ export default siteConfig({
 
   // basic site info (required)
   name: 'beaclnd\'s Blogs',
-  domain: 'nextjs-notion-starter-kit.transitivebullsh.it',
+  domain: 'beaclnd.online',
   author: 'beaclnd',
 
   // open graph metadata (optional)

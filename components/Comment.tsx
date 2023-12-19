@@ -31,7 +31,7 @@ export const GiscusComment = ({ pageId, isDarkMode }: { pageId: string, isDarkMo
             inputPosition={inputPosition}
             theme={isDarkMode ? 'dark_dimmed' : 'light'}
             lang='zh-CN'
-            loading='lazy'
+            loading='eager'
         />
     </div>
 )

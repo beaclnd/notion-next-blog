@@ -177,6 +177,12 @@ export const posthogConfig: Partial<PostHogConfig> = {
 export const isGiscusEnabled = getSiteConfig('isGiscusEnabled', false) 
 export const giscus = getSiteConfig('giscus', {}) 
 
+export const isGoogleAnalyticsEnabled = getSiteConfig('isGoogleAnalyticsEnabled', false)
+export const gaMeasuringId = getEnv('NEXT_PUBLIC_GA_MEASURING_ID', null) 
+export const gsaClientId = getEnv('GSA_CLIENT_ID', null) 
+export const gsaPrvkey = getEnv('GSA_PRVKEY', null) 
+export const gaStreamId = getEnv('GA_STREAM_ID', null) 
+
 function cleanPageUrlMap(
   pageUrlMap: PageUrlOverridesMap,
   {

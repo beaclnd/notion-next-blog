@@ -38,6 +38,7 @@ export interface SiteConfig {
   postsPerPage?: number
   isGiscusEnabled?: boolean
   giscus?: GiscusConf
+  isGoogleAnalyticsEnabled?: boolean
 }
 
 export interface NavigationLink {

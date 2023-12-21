@@ -2,6 +2,7 @@ import * as React from 'react'
 import Document, { Head, Html, Main, NextScript } from 'next/document'
 
 import { IconContext } from '@react-icons/all-files'
+import { gaMeasuringId, isGoogleAnalyticsEnabled } from '@/lib/config'
 
 export default class MyDocument extends Document {
   render() {
@@ -18,6 +19,24 @@ export default class MyDocument extends Document {
             />
 
             <link rel='manifest' href='/manifest.json' />
+            {/* Google tag (gtag.js) */}
+            {
+              isGoogleAnalyticsEnabled && !!gaMeasuringId && (
+                <>
+                  <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasuringId}`}></script>
+                  <script dangerouslySetInnerHTML={{
+                    __html: `
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+
+                    gtag('config', '${gaMeasuringId}');
+                    `
+                  }}>
+                  </script>
+                </>
+              )
+            }
           </Head>
 
           <body>

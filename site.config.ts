@@ -77,5 +77,7 @@ export default siteConfig({
     reactionsEnabled: '0',
     emitMetadata: '0',
     inputPosition: 'bottom'
-  }
+  },
+
+  isGoogleAnalyticsEnabled: true
 })

@@ -27,6 +27,7 @@ import {
   posthogConfig,
   posthogId
 } from '@/lib/config'
+import { pageview } from '@/lib/analytics'
 
 // if (!isServer) {
   // bootstrap()
@@ -36,7 +37,7 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
 
   React.useEffect(() => {
-    function onRouteChangeComplete() {
+    function onRouteChangeComplete(url: string) {
       if (fathomId) {
         Fathom.trackPageview()
       }
@@ -44,6 +45,8 @@ export default function App({ Component, pageProps }: AppProps) {
       if (posthogId) {
         posthog.capture('$pageview')
       }
+
+      pageview(url, document.title)
     }
 
     if (fathomId) {

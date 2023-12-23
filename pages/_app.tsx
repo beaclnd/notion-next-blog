@@ -37,7 +37,7 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
 
   React.useEffect(() => {
-    function onRouteChangeComplete(url: string) {
+    function onRouteChangeComplete() {
       if (fathomId) {
         Fathom.trackPageview()
       }

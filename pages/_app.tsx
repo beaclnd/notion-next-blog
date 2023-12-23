@@ -27,7 +27,7 @@ import {
   posthogConfig,
   posthogId
 } from '@/lib/config'
-import { pageview } from '@/lib/analytics'
+// import { pageview } from '@/lib/analytics'
 
 // if (!isServer) {
   // bootstrap()
@@ -46,7 +46,7 @@ export default function App({ Component, pageProps }: AppProps) {
         posthog.capture('$pageview')
       }
 
-      pageview(url, document.title)
+      // pageview(url, document.title)
     }
 
     if (fathomId) {

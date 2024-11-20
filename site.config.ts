@@ -10,7 +10,7 @@ export default siteConfig({
 
   // basic site info (required)
   name: 'beaclnd\'s Blogs',
-  domain: 'beaclnd.online',
+  domain: 'beaclnd.tech',
   author: 'beaclnd',
 
   // open graph metadata (optional)

@@ -10,7 +10,8 @@ export default siteConfig({
 
   // basic site info (required)
   name: 'beaclnd\'s Blogs',
-  domain: 'beaclnd.tech',
+  // use www. prefix in domain to generate valid sitemap
+  domain: 'www.beaclnd.tech',
   author: 'beaclnd',
 
   // open graph metadata (optional)

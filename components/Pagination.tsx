@@ -11,14 +11,14 @@ export const Pagination: React.FC<{curPage: number, totalPosts: number}> = ({ cu
   return (
     <div className={styles.pagination}>
       {showPrev &&
-        <Link href={curPage === 2 ? `/` : `/page/${curPage - 1}`}>
-          <a className={styles.a}>{'< 上一页'}</a>
+        <Link className={styles.a} href={curPage === 2 ? `/` : `/page/${curPage - 1}`}>
+          {'< 上一页'}
         </Link>
       }
       <div className={styles.spacer}></div>
       {showNext &&
-        <Link href={`/page/${curPage + 1}`}>
-          <a className={styles.a}>{'下一页 >'}</a>
+        <Link className={styles.a} href={`/page/${curPage + 1}`}>
+          {'下一页 >'}
         </Link>
       }
     </div>

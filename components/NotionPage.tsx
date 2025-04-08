@@ -158,7 +158,7 @@ const propertySelectValue = (
   if (pageHeader && schema?.type === 'multi_select' && normalizedValue) {
     return (
       <Link href={`/tags/${normalizedValue}`} key={key}>
-        <a>{defaultFn()}</a>
+        {defaultFn()}
       </Link>
     )
   }

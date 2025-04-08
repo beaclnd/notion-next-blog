@@ -1,18 +1,24 @@
-import * as React from 'react'
+// import * as React from 'react'
+
+/**
+ * To avoid the The Edge Function "api/social-image" size is larger than 1MB error on Vercel,
+ * I just make this API do nothing and return a 200 status.
+ */
+
 import { NextRequest } from 'next/server'
 
-import { ImageResponse } from '@vercel/og'
+// import { ImageResponse } from '@vercel/og'
 
 import { api, apiHost, rootNotionPageId } from '@/lib/config'
 import { NotionPageInfo } from '@/lib/types'
 
-const interRegularFontP = fetch(
-  new URL('../../public/fonts/Inter-Regular.ttf', import.meta.url)
-).then((res) => res.arrayBuffer())
+// const interRegularFontP = fetch(
+//   new URL('../../public/fonts/Inter-Regular.ttf', import.meta.url)
+// ).then((res) => res.arrayBuffer())
 
-const interBoldFontP = fetch(
-  new URL('../../public/fonts/Inter-SemiBold.ttf', import.meta.url)
-).then((res) => res.arrayBuffer())
+// const interBoldFontP = fetch(
+//   new URL('../../public/fonts/Inter-SemiBold.ttf', import.meta.url)
+// ).then((res) => res.arrayBuffer())
 
 export const config = {
   runtime: 'experimental-edge'
@@ -38,11 +44,12 @@ export default async function OGImage(req: NextRequest) {
   const pageInfo: NotionPageInfo = await pageInfoRes.json()
   console.log(pageInfo)
 
-  const [interRegularFont, interBoldFont] = await Promise.all([
-    interRegularFontP,
-    interBoldFontP
-  ])
+  // const [interRegularFont, interBoldFont] = await Promise.all([
+  //   interRegularFontP,
+  //   interBoldFontP
+  // ])
 
+  /*
   return new ImageResponse(
     (
       <div
@@ -176,4 +183,7 @@ export default async function OGImage(req: NextRequest) {
       ]
     }
   )
+  */
+
+  return new Response('OK', { status: 200 })
 }

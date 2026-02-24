@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { Collection } from 'notion-types'
 
 import * as types from '../../lib/types'
 import { search } from '../../lib/notion'
@@ -16,11 +17,12 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   // To remove the post which is not Public from the results
   const collectionKey = Object.keys(results.recordMap.collection)[0]
-  const schema = results.recordMap.collection[collectionKey].value.schema
+  const schema = (results.recordMap.collection[collectionKey]?.value as Collection | undefined)?.schema
   const keyOfPublicProperty = Object.keys(schema)
     .find((key) => schema[key].name === 'Public')
   const idsNotPublic = results.results.filter((item) => {
-    const properties = results.recordMap.block[(item as any).id]?.value?.properties
+    const blockValue = results.recordMap.block[(item as any).id]?.value as { properties?: any } | undefined
+    const properties = blockValue?.properties
     const isNotPublic = properties?.[keyOfPublicProperty]?.[0]?.[0] !== 'Yes'
     return isNotPublic
   }).map((item) => item.id)

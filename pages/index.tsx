@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ExtendedRecordMap } from 'notion-types'
+import { Collection, CollectionView, ExtendedRecordMap } from 'notion-types'
 
 import { NotionPage } from '@/components/NotionPage'
 import { domain, postsPerPage } from '@/lib/config'
@@ -13,11 +13,11 @@ export const getStaticProps = async () => {
     let curPage = 1;
     let totalPosts = 0;
     const recordMap = (props as any).recordMap as ExtendedRecordMap
-    const collection = Object.values(recordMap.collection)[0]?.value
+    const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
     if (collection) {
-        const galleryViewId = Object.values(recordMap.collection_view).find(
-          (view) => view.value?.type === 'gallery'
-        )?.value?.id
+        const galleryViewId = (Object.values(recordMap.collection_view).find(
+          (view) => (view?.value as CollectionView | undefined)?.type === 'gallery'
+        )?.value as CollectionView | undefined)?.id
         const query =
           recordMap.collection_query[collection.id]?.[galleryViewId]
         const queryResults = query?.collection_group_results ?? query

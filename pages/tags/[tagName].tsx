@@ -1,10 +1,11 @@
 import React from 'react'
 import omit from 'lodash.omit'
-import { isDev, domain, rootNotionPageId } from 'lib/config'
-import { resolveNotionPage } from 'lib/resolve-notion-page'
-import { NotionPage } from '@/components/NotionPage'
-import { ExtendedRecordMap } from 'notion-types'
+import { Collection, CollectionView, ExtendedRecordMap } from 'notion-types'
 import { normalizeTitle } from 'notion-utils'
+
+import { NotionPage } from '@/components/NotionPage'
+import { domain, isDev, rootNotionPageId } from 'lib/config'
+import { resolveNotionPage } from 'lib/resolve-notion-page'
 
 const tagsPropertyNameLowerCase = 'tags'
 
@@ -17,33 +18,35 @@ export const getStaticProps = async (context) => {
 
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
-      const collection = Object.values(recordMap.collection)[0]?.value
+      const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
       if (collection) {
-        const galleryView = Object.values(recordMap.collection_view).find(
-          (view) => view.value?.type === 'gallery'
-        )?.value
+        const galleryView = (Object.values(recordMap.collection_view).find(
+          (view) => (view?.value as CollectionView | undefined)?.type === 'gallery'
+        )?.value as CollectionView | undefined)
 
         if (galleryView) {
           const galleryBlock = Object.values(recordMap.block).find(
             (block) =>
-              block.value?.type === 'collection_view' &&
-              block.value.view_ids?.includes(galleryView.id)
+              (block?.value as { type?: string; view_ids?: string[] } | undefined)?.type === 'collection_view' &&
+              (block?.value as { type?: string; view_ids?: string[] } | undefined)?.view_ids?.includes(galleryView.id)
           )
 
-          if (galleryBlock?.value) {
+          const galleryBlockValue = galleryBlock?.value as { id?: string } | undefined
+          if (galleryBlockValue?.id && collection.schema) {
             recordMap.block = {
-              [galleryBlock.value.id]: galleryBlock,
-              ...omit(recordMap.block, [galleryBlock.value.id])
+              [galleryBlockValue.id]: galleryBlock,
+              ...omit(recordMap.block, [galleryBlockValue.id])
             }
 
             const propertyToFilter = Object.entries(collection.schema).find(
               (property) =>
-                property[1]?.name?.toLowerCase() === tagsPropertyNameLowerCase
+                (property[1] as { name?: string } | undefined)?.name?.toLowerCase() === tagsPropertyNameLowerCase
             )
             const propertyToFilterId = propertyToFilter?.[0]
             const filteredValue = normalizeTitle(rawTagName)
-            propertyToFilterName = propertyToFilter?.[1]?.options.find(
+            const propertyToFilterSchemaEntry = propertyToFilter?.[1] as { options?: { value: string }[] } | undefined
+            propertyToFilterName = propertyToFilterSchemaEntry?.options?.find(
               (option) => normalizeTitle(option.value) === filteredValue
             )?.value
 
@@ -54,7 +57,7 @@ export const getStaticProps = async (context) => {
 
               if (queryResults) {
                 queryResults.blockIds = queryResults.blockIds.filter((id) => {
-                  const block = recordMap.block[id]?.value
+                  const block = recordMap.block[id]?.value as { properties?: any } | undefined
                   if (!block || !block.properties) {
                     return false
                   }
@@ -105,13 +108,13 @@ export async function getStaticPaths() {
 
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
-      const collection = Object.values(recordMap.collection)[0]?.value
+      const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
-      if (collection) {
+      if (collection && collection.schema) {
         const propertyToFilterSchema = Object.entries(collection.schema).find(
           (property) =>
-            property[1]?.name?.toLowerCase() === tagsPropertyNameLowerCase
-        )?.[1]
+            (property[1] as { name?: string } | undefined)?.name?.toLowerCase() === tagsPropertyNameLowerCase
+        )?.[1] as { options?: { value: string }[] } | undefined
 
         const paths = (propertyToFilterSchema?.options ?? [])
           .map((option) => normalizeTitle(option.value))

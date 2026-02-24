@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ExtendedRecordMap } from 'notion-types'
+import { Collection, CollectionView, ExtendedRecordMap } from 'notion-types'
 
 import { NotionPage } from '@/components/NotionPage'
 import { domain, isDev, postsPerPage, rootNotionPageId } from '@/lib/config'
@@ -13,18 +13,18 @@ export const getStaticProps = async (context) => {
     // For pagination
     let totalPosts: number;
     const recordMap = (props as any).recordMap as ExtendedRecordMap
-    const collection = Object.values(recordMap.collection)[0]?.value
+    const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
     if (collection) {
-        const galleryViewId = Object.values(recordMap.collection_view).find(
-          (view) => view.value?.type === 'gallery'
-        )?.value?.id
+        const galleryViewId = (Object.values(recordMap.collection_view).find(
+          (view) => (view?.value as CollectionView | undefined)?.type === 'gallery'
+        )?.value as CollectionView | undefined)?.id
         const query =
           recordMap.collection_query[collection.id]?.[galleryViewId]
         const queryResults = query?.collection_group_results ?? query
         if (queryResults) {
           totalPosts = queryResults.blockIds.length
           queryResults.blockIds = queryResults.blockIds.slice(
-            (curPage - 1) * postsPerPage, 
+            (curPage - 1) * postsPerPage,
             curPage * postsPerPage
           )
         }
@@ -46,11 +46,11 @@ export async function getStaticPaths() {
 
     let totalPosts: number;
     const recordMap = (props as any).recordMap as ExtendedRecordMap
-    const collection = Object.values(recordMap.collection)[0]?.value
+    const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
     if (collection) {
-        const galleryViewId = Object.values(recordMap.collection_view).find(
-          (view) => view.value?.type === 'gallery'
-        )?.value?.id
+        const galleryViewId = (Object.values(recordMap.collection_view).find(
+          (view) => (view?.value as CollectionView | undefined)?.type === 'gallery'
+        )?.value as CollectionView | undefined)?.id
         const query =
           recordMap.collection_query[collection.id]?.[galleryViewId]
         const queryResults = query?.collection_group_results ?? query

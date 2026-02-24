@@ -271,10 +271,25 @@ export const NotionPage: React.FC<types.PageProps> = ({
     
     const cleanBlocks: typeof recordMap.block = {}
     for (const [key, blockData] of Object.entries(recordMap.block)) {
-      // Keep blocks that have a value with an id, or have a valid structure
+      // Keep blocks that have a value with an id
+      // Some blocks may have the id in different locations
       const blockValue = blockData?.value as Block | undefined
-      if (blockData && (blockValue?.id || blockData.role)) {
-        cleanBlocks[key] = blockData
+      const blockId = blockValue?.id || key
+      
+      if (blockData && blockId) {
+        // Ensure the block has an id in its value for react-notion-x
+        let processedBlockData = blockData
+        const rawValue = (blockData as any).value
+        if (rawValue && !rawValue.id) {
+          processedBlockData = {
+            ...blockData,
+            value: {
+              ...rawValue,
+              id: blockId
+            }
+          } as typeof blockData
+        }
+        cleanBlocks[key] = processedBlockData
       }
     }
     
@@ -294,6 +309,19 @@ export const NotionPage: React.FC<types.PageProps> = ({
 
   const keys = Object.keys(cleanRecordMap?.block || {})
   const block = cleanRecordMap?.block?.[keys[0]]?.value as Block | undefined
+
+  // Debug logging
+  if (config.isDev) {
+    console.log('NotionPage render debug:', {
+      pageId,
+      blockKeysCount: keys.length,
+      firstBlockKey: keys[0],
+      blockExists: !!block,
+      blockId: block?.id,
+      blockType: block?.type,
+      error: error
+    })
+  }
 
   // const isRootPage =
   //   parsePageId(block?.id) === parsePageId(site?.rootNotionPageId)

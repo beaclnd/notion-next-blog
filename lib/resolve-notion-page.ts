@@ -82,8 +82,27 @@ export async function resolveNotionPage(domain: string, rawPageId?: string) {
   } else {
     pageId = site.rootNotionPageId
 
-    console.log(site)
-    recordMap = await getPage(pageId)
+    console.log('site config:', site)
+    try {
+      recordMap = await getPage(pageId)
+      console.log('recordMap fetched successfully')
+      console.log('recordMap block keys count:', Object.keys(recordMap?.block || {}).length)
+      console.log('recordMap collection keys count:', Object.keys(recordMap?.collection || {}).length)
+      
+      // Log the first few block keys for debugging
+      const blockKeys = Object.keys(recordMap?.block || {})
+      if (blockKeys.length > 0) {
+        console.log('First block key:', blockKeys[0])
+        const firstBlock = recordMap.block[blockKeys[0]]
+        const firstBlockValue = (firstBlock as any)?.value
+        console.log('First block value id:', firstBlockValue?.id || 'no id')
+      } else {
+        console.warn('No blocks found in recordMap')
+      }
+    } catch (err) {
+      console.error('Error fetching page from Notion:', err)
+      throw err
+    }
   }
 
   const props = { site, recordMap, pageId }

@@ -50,6 +50,9 @@ importers:
       isomorphic-unfetch:
         specifier: ^3.1.0
         version: 3.1.0
+      katex:
+        specifier: ^0.16.33
+        version: 0.16.33
       lodash.omit:
         specifier: ^4.5.0
         version: 4.5.0
@@ -1623,6 +1626,10 @@ packages:
 
   katex@0.16.21:
     resolution: {integrity: sha512-XvqR7FgOHtWupfMiigNzmh+MgUVmDGU2kXZm899ZkPfcuoPuFxyHmXsgATDpFZDAXCI8tvinaVcDo8PIIJSo4A==}
+    hasBin: true
+
+  katex@0.16.33:
+    resolution: {integrity: sha512-q3N5u+1sY9Bu7T4nlXoiRBXWfwSefNGoKeOwekV+gw0cAXQlz2Ww6BLcmBxVDeXBMUDQv6fK5bcNaJLxob3ZQA==}
     hasBin: true
 
   keyv@4.5.4:
@@ -4360,6 +4367,10 @@ snapshots:
       object.values: 1.2.1
 
   katex@0.16.21:
+    dependencies:
+      commander: 8.3.0
+
+  katex@0.16.33:
     dependencies:
       commander: 8.3.0
 

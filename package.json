@@ -76,5 +76,13 @@
     "cacheable-request": {
       "keyv": "npm:@keyvhq/core@~1.6.6"
     }
+  },
+  "pnpm": {
+    "overrides": {
+      "sharp": "^0.32.6"
+    },
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
   }
 }

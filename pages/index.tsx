@@ -10,7 +10,8 @@ export const getStaticProps = async () => {
     const props = await resolveNotionPage(domain)
 
     // For pagination
-    let curPage: number, totalPosts: number;
+    let curPage: number = 1;
+    let totalPosts: number = 0;
     const recordMap = (props as any).recordMap as ExtendedRecordMap
     const collection = Object.values(recordMap.collection)[0]?.value
     if (collection) {

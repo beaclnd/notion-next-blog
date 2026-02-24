@@ -13,7 +13,7 @@ export const getStaticProps = async (context) => {
 
   try {
     const props = await resolveNotionPage(domain, rootNotionPageId)
-    let propertyToFilterName: string
+    let propertyToFilterName: string = null
 
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
@@ -113,7 +113,7 @@ export async function getStaticPaths() {
             property[1]?.name?.toLowerCase() === tagsPropertyNameLowerCase
         )?.[1]
 
-        const paths = propertyToFilterSchema.options
+        const paths = (propertyToFilterSchema?.options ?? [])
           .map((option) => normalizeTitle(option.value))
           .filter(Boolean)
           .map((tag) => ({params: {tagName: tag}}))

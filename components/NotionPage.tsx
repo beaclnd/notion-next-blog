@@ -265,16 +265,35 @@ export const NotionPage: React.FC<types.PageProps> = ({
 
   const { isDarkMode } = useDarkMode()
 
+  // Filter out blocks without valid IDs to prevent uuidToId errors
+  const cleanRecordMap = React.useMemo(() => {
+    if (!recordMap?.block) return recordMap
+    
+    const cleanBlocks: typeof recordMap.block = {}
+    for (const [key, blockData] of Object.entries(recordMap.block)) {
+      // Keep blocks that have a value with an id, or have a valid structure
+      const blockValue = blockData?.value as Block | undefined
+      if (blockData && (blockValue?.id || blockData.role)) {
+        cleanBlocks[key] = blockData
+      }
+    }
+    
+    return {
+      ...recordMap,
+      block: cleanBlocks
+    }
+  }, [recordMap])
+
   const siteMapPageUrl = React.useMemo(() => {
     const params: any = {}
     if (lite) params.lite = lite
 
     const searchParams = new URLSearchParams(params)
-    return mapPageUrl(site, recordMap, searchParams)
-  }, [site, recordMap, lite])
+    return mapPageUrl(site, cleanRecordMap, searchParams)
+  }, [site, cleanRecordMap, lite])
 
-  const keys = Object.keys(recordMap?.block || {})
-  const block = recordMap?.block?.[keys[0]]?.value as Block | undefined
+  const keys = Object.keys(cleanRecordMap?.block || {})
+  const block = cleanRecordMap?.block?.[keys[0]]?.value as Block | undefined
 
   // const isRootPage =
   //   parsePageId(block?.id) === parsePageId(site?.rootNotionPageId)
@@ -286,9 +305,9 @@ export const NotionPage: React.FC<types.PageProps> = ({
 
   const pageAside = React.useMemo(
     () => (
-      <PageAside block={block} recordMap={recordMap} isBlogPost={isBlogPost} />
+      <PageAside block={block} recordMap={cleanRecordMap} isBlogPost={isBlogPost} />
     ),
-    [block, recordMap, isBlogPost]
+    [block, cleanRecordMap, isBlogPost]
   )
 
   const pageFooter = React.useMemo(
@@ -319,7 +338,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
     return <Page404 site={site} pageId={pageId} error={error} />
   }
 
-  const name = getBlockTitle(block, recordMap) || site.name
+  const name = getBlockTitle(block, cleanRecordMap) || site.name
   const title = tagsPage && propertyToFilterName ? `标签：${propertyToFilterName}` : name
 
   if (config.isDev) {
@@ -328,7 +347,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
       title,
       pageId,
       rootNotionPageId: site.rootNotionPageId,
-      recordMap
+      recordMap: cleanRecordMap
     })
   }
 
@@ -336,22 +355,22 @@ export const NotionPage: React.FC<types.PageProps> = ({
     // add important objects to the window global for easy debugging
     const g = window as any
     g.pageId = pageId
-    g.recordMap = recordMap
+    g.recordMap = cleanRecordMap
     g.block = block
   }
 
   const canonicalPageUrl =
-    !config.isDev && getCanonicalPageUrl(site, recordMap)(pageId)
+    !config.isDev && getCanonicalPageUrl(site, cleanRecordMap)(pageId)
 
   const socialImage = mapImageUrl(
-    getPageProperty<string>('Social Image', block, recordMap) ||
+    getPageProperty<string>('Social Image', block, cleanRecordMap) ||
       (block as PageBlock).format?.page_cover ||
       config.defaultPageCover,
     block
   )
 
   const socialDescription =
-    getPageProperty<string>('Description', block, recordMap) ||
+    getPageProperty<string>('Description', block, cleanRecordMap) ||
     config.description
 
   return (
@@ -376,11 +395,11 @@ export const NotionPage: React.FC<types.PageProps> = ({
         )}
         darkMode={isDarkMode}
         components={components}
-        recordMap={recordMap}
+        recordMap={cleanRecordMap}
         rootPageId={site.rootNotionPageId}
         rootDomain={site.domain}
         fullPage={!isLiteMode}
-        previewImages={!!recordMap.preview_images}
+        previewImages={!!cleanRecordMap.preview_images}
         showCollectionViewDropdown={false}
         showTableOfContents={showTableOfContents}
         minTableOfContentsItems={minTableOfContentsItems}

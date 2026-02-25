@@ -30,7 +30,7 @@ export const getStaticProps = async (context) => {
         }
     }
 
-    return { props: {...props, curPage, totalPosts }, revalidate: 10 }
+    return { props: {...props, curPage, totalPosts } }
   } catch (err) {
     console.error('page error', domain, err)
 

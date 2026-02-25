@@ -90,8 +90,7 @@ export const getStaticProps = async (context) => {
         ...props,
         tagsPage: true,
         propertyToFilterName
-      },
-      revalidate: 10
+      }
     }
   } catch (err) {
     console.error('page error', domain, rawTagName, err)

@@ -1,44 +1,35 @@
-import type { GetServerSideProps } from 'next'
+import type { GetStaticProps } from 'next'
 
 import { host } from '@/lib/config'
 
-export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
-  if (req.method !== 'GET') {
-    res.statusCode = 405
-    res.setHeader('Content-Type', 'application/json')
-    res.write(JSON.stringify({ error: 'method not allowed' }))
-    res.end()
+export const getStaticProps: GetStaticProps = async () => {
+  // Generate robots.txt content at build time
+  const isProduction = process.env.VERCEL_ENV === 'production'
 
-    return {
-      props: {}
-    }
-  }
-
-  // cache for up to one day
-  res.setHeader('Cache-Control', 'public, max-age=86400, immutable')
-  res.setHeader('Content-Type', 'text/plain')
-
-  // only allow the site to be crawlable on the production deployment
-  if (process.env.VERCEL_ENV === 'production') {
-    res.write(`User-agent: *
+  const content = isProduction
+    ? `User-agent: *
 Allow: /
 Disallow: /api/*
 
 Sitemap: ${host}/sitemap.xml
-`)
-  } else {
-    res.write(`User-agent: *
+`
+    : `User-agent: *
 Disallow: /
 
 Sitemap: ${host}/sitemap.xml
-`)
-  }
-
-  res.end()
+`
 
   return {
-    props: {}
+    props: {
+      content
+    }
   }
 }
 
-export default () => null
+export default function RobotsTxt({ content }: { content: string }) {
+  return (
+    <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', padding: '20px' }}>
+      {content}
+    </pre>
+  )
+}

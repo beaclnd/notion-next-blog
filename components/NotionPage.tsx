@@ -31,6 +31,7 @@ import { Pagination } from './Pagination'
 import styles from './styles.module.css'
 import MoveToTopButton from './MoveToTopButton'
 import { GiscusComment } from './Comment'
+import { ErrorBoundary } from './ErrorBoundary'
 
 // -----------------------------------------------------------------------------
 // dynamic imports for optional components
@@ -271,26 +272,15 @@ export const NotionPage: React.FC<types.PageProps> = ({
     
     const cleanBlocks: typeof recordMap.block = {}
     for (const [key, blockData] of Object.entries(recordMap.block)) {
-      // Keep blocks that have a value with an id
-      // Some blocks may have the id in different locations
-      const blockValue = blockData?.value as Block | undefined
-      const blockId = blockValue?.id || key
+      // Skip blocks without any data
+      if (!blockData) continue
       
-      if (blockData && blockId) {
-        // Ensure the block has an id in its value for react-notion-x
-        let processedBlockData = blockData
-        const rawValue = (blockData as any).value
-        if (rawValue && !rawValue.id) {
-          processedBlockData = {
-            ...blockData,
-            value: {
-              ...rawValue,
-              id: blockId
-            }
-          } as typeof blockData
-        }
-        cleanBlocks[key] = processedBlockData
+      const blockValue = (blockData as any).value
+      // Ensure block has an id - use the key as fallback
+      if (blockValue && !blockValue.id) {
+        blockValue.id = key
       }
+      cleanBlocks[key] = blockData
     }
     
     return {
@@ -307,16 +297,38 @@ export const NotionPage: React.FC<types.PageProps> = ({
     return mapPageUrl(site, cleanRecordMap, searchParams)
   }, [site, cleanRecordMap, lite])
 
+  // Find the root block for this page - it should match the pageId
   const keys = Object.keys(cleanRecordMap?.block || {})
-  const block = cleanRecordMap?.block?.[keys[0]]?.value as Block | undefined
+  const targetId = pageId || site?.rootNotionPageId
+  
+  // Try to find the block that matches the pageId
+  let block = cleanRecordMap?.block?.[targetId]?.value as Block | undefined
+  
+  // If not found directly, try with and without dashes
+  if (!block && targetId) {
+    const normalizedId = targetId.replace(/-/g, '')
+    for (const key of keys) {
+      const keyNormalized = key.replace(/-/g, '')
+      if (keyNormalized === normalizedId) {
+        block = cleanRecordMap?.block?.[key]?.value as Block | undefined
+        break
+      }
+    }
+  }
+  
+  // Fallback to first block if still not found (shouldn't happen in normal cases)
+  if (!block && keys.length > 0) {
+    block = cleanRecordMap?.block?.[keys[0]]?.value as Block | undefined
+  }
 
-  // Debug logging
-  if (config.isDev) {
+  // Debug logging - enabled in both dev and production for troubleshooting
+  if (typeof window !== 'undefined') {
     console.log('NotionPage render debug:', {
       pageId,
+      targetId,
       blockKeysCount: keys.length,
       firstBlockKey: keys[0],
-      blockExists: !!block,
+      blockFound: !!block,
       blockId: block?.id,
       blockType: block?.type,
       error: error
@@ -415,33 +427,42 @@ export const NotionPage: React.FC<types.PageProps> = ({
       {isLiteMode && <BodyClassName className='notion-lite' />}
       {isDarkMode && <BodyClassName className='dark-mode' />}
 
-      <NotionRenderer
-        bodyClassName={cs(
-          styles.notion,
-          pageId === site.rootNotionPageId && 'index-page',
-          tagsPage && 'tags-page'
-        )}
-        darkMode={isDarkMode}
-        components={components}
-        recordMap={cleanRecordMap}
-        rootPageId={site.rootNotionPageId}
-        rootDomain={site.domain}
-        fullPage={!isLiteMode}
-        previewImages={!!cleanRecordMap.preview_images}
-        showCollectionViewDropdown={false}
-        showTableOfContents={showTableOfContents}
-        minTableOfContentsItems={minTableOfContentsItems}
-        defaultPageIcon={config.defaultPageIcon}
-        defaultPageCover={config.defaultPageCover}
-        defaultPageCoverPosition={config.defaultPageCoverPosition}
-        mapPageUrl={siteMapPageUrl}
-        mapImageUrl={mapImageUrl}
-        searchNotion={config.isSearchEnabled ? searchNotion : null}
-        pageAside={pageAside}
-        pageTitle={tagsPage && propertyToFilterName ? title : undefined}
-        pageFooter={pageFooter}
-        footer={footer}
-      />
+      <ErrorBoundary
+        fallback={
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <h2>Error rendering Notion content</h2>
+            <p>There was an error displaying this page. Please try refreshing.</p>
+          </div>
+        }
+      >
+        <NotionRenderer
+          bodyClassName={cs(
+            styles.notion,
+            pageId === site.rootNotionPageId && 'index-page',
+            tagsPage && 'tags-page'
+          )}
+          darkMode={isDarkMode}
+          components={components}
+          recordMap={cleanRecordMap}
+          rootPageId={site.rootNotionPageId}
+          rootDomain={site.domain}
+          fullPage={!isLiteMode}
+          previewImages={!!cleanRecordMap.preview_images}
+          showCollectionViewDropdown={false}
+          showTableOfContents={showTableOfContents}
+          minTableOfContentsItems={minTableOfContentsItems}
+          defaultPageIcon={config.defaultPageIcon}
+          defaultPageCover={config.defaultPageCover}
+          defaultPageCoverPosition={config.defaultPageCoverPosition}
+          mapPageUrl={siteMapPageUrl}
+          mapImageUrl={mapImageUrl}
+          searchNotion={config.isSearchEnabled ? searchNotion : null}
+          pageAside={pageAside}
+          pageTitle={tagsPage && propertyToFilterName ? title : undefined}
+          pageFooter={pageFooter}
+          footer={footer}
+        />
+      </ErrorBoundary>
 
       <MoveToTopButton />
 

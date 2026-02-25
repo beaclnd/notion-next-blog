@@ -75,17 +75,24 @@ export const getStaticProps = async (context) => {
               ...omit(recordMap.block, [galleryBlockValue.id])
             }
 
-            // Debug: Log the full schema
-            console.log('Tags getStaticProps: Full schema keys:', Object.keys(collection.schema || {}))
-            console.log('Tags getStaticProps: Full schema:', JSON.stringify(collection.schema, null, 2).slice(0, 2000))
+            // Schema is at collection.value.schema (nested in the collection value)
+            const schema = (collection as any)?.value?.schema || collection.schema
+            console.log('Tags getStaticProps: Schema found:', !!schema)
 
-            const propertyToFilter = Object.entries(collection.schema).find(
+            if (!schema) {
+              console.log('Tags getStaticProps: No schema found in collection')
+              console.log('Tags getStaticProps: Collection structure:', JSON.stringify(Object.keys(collection as any), null, 2))
+            } else {
+              console.log('Tags getStaticProps: Full schema keys:', Object.keys(schema || {}))
+            }
+
+            const propertyToFilter = schema ? Object.entries(schema).find(
               (property) => {
                 const propName = (property[1] as { name?: string } | undefined)?.name?.toLowerCase()
                 console.log('Tags getStaticProps: Checking property:', property[0], 'name:', propName)
                 return propName === tagsPropertyNameLowerCase
               }
-            )
+            ) : null
             const propertyToFilterId = propertyToFilter?.[0]
             const filteredValue = normalizeTitle(rawTagName)
             const propertyToFilterSchemaEntry = propertyToFilter?.[1] as { options?: { value: string }[] } | undefined
@@ -197,10 +204,13 @@ export async function getStaticPaths() {
       const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
       console.log('Tags getStaticPaths: collection found:', !!collection)
-      console.log('Tags getStaticPaths: collection schema:', collection?.schema ? 'present' : 'missing')
 
-      if (collection && collection.schema) {
-        const propertyToFilter = Object.entries(collection.schema).find(
+      // Schema is at collection.value.schema (nested)
+      const schema = (collection as any)?.value?.schema || collection?.schema
+      console.log('Tags getStaticPaths: schema found:', !!schema)
+
+      if (schema) {
+        const propertyToFilter = Object.entries(schema).find(
           (property) =>
             (property[1] as { name?: string } | undefined)?.name?.toLowerCase() === tagsPropertyNameLowerCase
         )
@@ -209,15 +219,17 @@ export async function getStaticPaths() {
         console.log('Tags getStaticPaths: tags property found:', !!propertyToFilter)
         console.log('Tags getStaticPaths: tags options count:', propertyToFilterSchema?.options?.length || 0)
 
-        const paths = (propertyToFilterSchema?.options ?? [])
-          .map((option) => normalizeTitle(option.value))
-          .filter(Boolean)
-          .map((tag) => ({params: {tagName: tag}}))
+        if (propertyToFilterSchema?.options) {
+          const paths = (propertyToFilterSchema.options)
+            .map((option) => normalizeTitle(option.value))
+            .filter(Boolean)
+            .map((tag) => ({params: {tagName: tag}}))
 
-        console.log('Tags getStaticPaths: generated paths:', paths)
-        return {
-          paths,
-          fallback: true
+          console.log('Tags getStaticPaths: generated paths:', paths)
+          return {
+            paths,
+            fallback: true
+          }
         }
       }
     }
@@ -245,18 +257,29 @@ export default function NotionTagsPage(props) {
     if (collectionEntries.length > 0) {
       const [collectionId, collectionData] = collectionEntries[0]
       console.log('NotionTagsPage browser: collectionId:', collectionId)
-      console.log('NotionTagsPage browser: collectionData keys:', Object.keys(collectionData || {}))
-      console.log('NotionTagsPage browser: collectionData.value keys:', Object.keys((collectionData as any)?.value || {}))
-      console.log('NotionTagsPage browser: full collectionData:', JSON.stringify(collectionData, null, 2).slice(0, 1500))
 
-      const collection = (collectionData as any)?.value as Collection | undefined
-      console.log('NotionTagsPage browser: collection schema:', collection?.schema ? 'exists' : 'missing')
+      // Schema is at collectionData.value.value.schema (nested deeper)
+      const schema = (collectionData as any)?.value?.value?.schema
+      console.log('NotionTagsPage browser: schema found at value.value.schema:', !!schema)
 
-      // Also check if schema is at a different level
-      const rawSchema = (collectionData as any)?.value?.schema || (collectionData as any)?.schema
-      console.log('NotionTagsPage browser: rawSchema found:', !!rawSchema)
-      if (rawSchema) {
-        console.log('NotionTagsPage browser: rawSchema keys:', Object.keys(rawSchema))
+      if (schema) {
+        console.log('NotionTagsPage browser: schema entries:')
+        Object.entries(schema).forEach(([key, prop]: [string, any]) => {
+          console.log('  -', key, ': name="' + prop?.name + '" type=' + prop?.type)
+          if (prop?.options) {
+            console.log('    options:', prop.options.map((o: any) => o.value))
+          }
+        })
+
+        // Find the Tags property (case-insensitive)
+        const tagsProperty = Object.entries(schema).find(([_, prop]: [string, any]) =>
+          prop?.name?.toLowerCase() === 'tags'
+        )
+        console.log('NotionTagsPage browser: tagsProperty found:', !!tagsProperty)
+        if (tagsProperty) {
+          const [propId, propData] = tagsProperty
+          console.log('NotionTagsPage browser: tags property id:', propId, 'name:', propData?.name)
+        }
       }
     }
 

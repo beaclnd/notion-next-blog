@@ -245,17 +245,18 @@ export default function NotionTagsPage(props) {
     if (collectionEntries.length > 0) {
       const [collectionId, collectionData] = collectionEntries[0]
       console.log('NotionTagsPage browser: collectionId:', collectionId)
+      console.log('NotionTagsPage browser: collectionData keys:', Object.keys(collectionData || {}))
+      console.log('NotionTagsPage browser: collectionData.value keys:', Object.keys((collectionData as any)?.value || {}))
+      console.log('NotionTagsPage browser: full collectionData:', JSON.stringify(collectionData, null, 2).slice(0, 1500))
+
       const collection = (collectionData as any)?.value as Collection | undefined
       console.log('NotionTagsPage browser: collection schema:', collection?.schema ? 'exists' : 'missing')
 
-      if (collection?.schema) {
-        console.log('NotionTagsPage browser: schema entries:')
-        Object.entries(collection.schema).forEach(([key, prop]: [string, any]) => {
-          console.log('  -', key, ': name="' + prop?.name + '" type=' + prop?.type)
-          if (prop?.options) {
-            console.log('    options:', prop.options.map((o: any) => o.value))
-          }
-        })
+      // Also check if schema is at a different level
+      const rawSchema = (collectionData as any)?.value?.schema || (collectionData as any)?.schema
+      console.log('NotionTagsPage browser: rawSchema found:', !!rawSchema)
+      if (rawSchema) {
+        console.log('NotionTagsPage browser: rawSchema keys:', Object.keys(rawSchema))
       }
     }
 

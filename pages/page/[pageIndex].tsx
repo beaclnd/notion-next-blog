@@ -37,7 +37,7 @@ export const getStaticProps = async (context) => {
     const props = await resolveNotionPage(domain, rootNotionPageId)
 
     // For pagination
-    let totalPosts: number = 0
+    let totalPosts = 0
     const recordMap = (props as any).recordMap as ExtendedRecordMap
     const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
@@ -85,7 +85,7 @@ export async function getStaticPaths() {
   if (!isDev) {
     const props = await resolveNotionPage(domain, rootNotionPageId)
 
-    let totalPosts: number = 0
+    let totalPosts = 0
     const recordMap = (props as any).recordMap as ExtendedRecordMap
     const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 

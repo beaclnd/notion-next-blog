@@ -239,6 +239,8 @@ export default function NotionTagsPage(props) {
     const recordMap = props.recordMap as ExtendedRecordMap
     const tagName = (props as any).propertyToFilterName || window.location.pathname.split('/').pop()
 
+    console.log('NotionTagsPage: tagName from props or URL:', tagName)
+
     if (tagName) {
       const normalizedTag = normalizeTitle(tagName)
 
@@ -246,37 +248,51 @@ export default function NotionTagsPage(props) {
       const collectionData = Object.values(recordMap.collection)[0] as any
       const schema = collectionData?.value?.value?.schema
 
+      console.log('NotionTagsPage: schema found:', !!schema)
+
       if (schema) {
         const tagsProperty = Object.entries(schema).find(([_, prop]: [string, any]) =>
           prop?.name?.toLowerCase() === 'tags'
         )
         const propertyToFilterId = tagsProperty?.[0]
 
+        console.log('NotionTagsPage: tagsProperty found:', !!tagsProperty, 'propertyId:', propertyToFilterId)
+
         if (propertyToFilterId) {
           console.log('Client-side filtering: tag:', normalizedTag, 'propertyId:', propertyToFilterId)
 
-          // Find gallery view block and filter its content
-          const collectionViewBlock = Object.entries(recordMap.block).find(([_, block]: [string, any]) =>
+          // Find all collection_view blocks
+          const collectionViewBlocks = Object.entries(recordMap.block).filter(([_, block]: [string, any]) =>
             block?.value?.type === 'collection_view'
           )
+          console.log('NotionTagsPage: collection_view blocks found:', collectionViewBlocks.length)
 
-          if (collectionViewBlock) {
-            const [blockId, blockData] = collectionViewBlock
-            const originalContent = blockData?.value?.content || []
-            const filteredContent = originalContent.filter((id: string) => {
-              const block = recordMap.block[id]?.value as { properties?: any } | undefined
-              const value = block?.properties?.[propertyToFilterId]?.[0]?.[0]
-              if (!value) return false
-              const values = value.split(',')
-              return values.find((v: string) => normalizeTitle(v) === normalizedTag)
+          if (collectionViewBlocks.length > 0) {
+            collectionViewBlocks.forEach(([blockId, blockData]: [string, any]) => {
+              console.log('NotionTagsPage: Processing block', blockId)
+              console.log('NotionTagsPage: block view_ids:', blockData?.value?.view_ids)
+              console.log('NotionTagsPage: block content before:', blockData?.value?.content?.length)
+
+              const originalContent = blockData?.value?.content || []
+              const filteredContent = originalContent.filter((id: string) => {
+                const block = recordMap.block[id]?.value as { properties?: any } | undefined
+                const value = block?.properties?.[propertyToFilterId]?.[0]?.[0]
+                console.log('NotionTagsPage: Checking post', id, 'tag value:', value)
+                if (!value) return false
+                const values = value.split(',')
+                const hasTag = values.find((v: string) => normalizeTitle(v) === normalizedTag)
+                console.log('NotionTagsPage: Post', id, 'has tag', normalizedTag, ':', !!hasTag)
+                return hasTag
+              })
+
+              console.log('Client-side filtering: original posts:', originalContent.length, 'filtered:', filteredContent.length)
+
+              // Update the block content
+              if (blockData?.value) {
+                blockData.value.content = filteredContent
+                console.log('NotionTagsPage: block content after:', blockData.value.content.length)
+              }
             })
-
-            console.log('Client-side filtering: original posts:', originalContent.length, 'filtered:', filteredContent.length)
-
-            // Update the block content
-            if (blockData?.value) {
-              blockData.value.content = filteredContent
-            }
           }
         }
       }

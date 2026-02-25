@@ -9,8 +9,33 @@ import { resolveNotionPage } from 'lib/resolve-notion-page'
 
 const tagsPropertyNameLowerCase = 'tags'
 
+function getGalleryView(recordMap: ExtendedRecordMap): CollectionView | undefined {
+  const views = Object.values(recordMap.collection_view)
+  console.log('Tags: Found', views.length, 'collection views')
+
+  for (const view of views) {
+    const viewValue = (view as any)?.value as CollectionView | undefined
+    console.log('Tags: Checking view type:', viewValue?.type, 'id:', viewValue?.id)
+    if (viewValue?.type === 'gallery') {
+      console.log('Tags: Found gallery view with id:', viewValue.id)
+      return viewValue
+    }
+  }
+
+  // Fallback to first view if no gallery found
+  if (views.length > 0) {
+    const firstView = (views[0] as any)?.value as CollectionView | undefined
+    console.log('Tags: No gallery view found, using first view:', firstView?.id)
+    return firstView
+  }
+
+  console.log('Tags: No views found')
+  return undefined
+}
+
 export const getStaticProps = async (context) => {
   const rawTagName = (context?.params?.tagName as string) || ''
+  console.log('Tags getStaticProps: tagName:', rawTagName)
 
   try {
     const props = await resolveNotionPage(domain, rootNotionPageId)
@@ -20,10 +45,11 @@ export const getStaticProps = async (context) => {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
       const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
+      console.log('Tags getStaticProps: collection found:', !!collection)
+      console.log('Tags getStaticProps: collection schema:', collection?.schema ? 'present' : 'missing')
+
       if (collection) {
-        const galleryView = (Object.values(recordMap.collection_view).find(
-          (view) => (view?.value as CollectionView | undefined)?.type === 'gallery'
-        )?.value as CollectionView | undefined)
+        const galleryView = getGalleryView(recordMap)
 
         if (galleryView) {
           const galleryBlock = Object.values(recordMap.block).find(
@@ -33,6 +59,8 @@ export const getStaticProps = async (context) => {
           )
 
           const galleryBlockValue = galleryBlock?.value as { id?: string } | undefined
+          console.log('Tags getStaticProps: galleryBlock found:', !!galleryBlockValue?.id)
+
           if (galleryBlockValue?.id && collection.schema) {
             recordMap.block = {
               [galleryBlockValue.id]: galleryBlock,
@@ -50,12 +78,20 @@ export const getStaticProps = async (context) => {
               (option) => normalizeTitle(option.value) === filteredValue
             )?.value
 
+            console.log('Tags getStaticProps: propertyToFilterId:', propertyToFilterId)
+            console.log('Tags getStaticProps: filteredValue:', filteredValue)
+            console.log('Tags getStaticProps: propertyToFilterName:', propertyToFilterName)
+
             if (propertyToFilterId && filteredValue) {
               const query =
                 recordMap.collection_query[collection.id]?.[galleryView.id]
               const queryResults = query?.collection_group_results ?? query
 
+              console.log('Tags getStaticProps: query found:', !!query)
+              console.log('Tags getStaticProps: queryResults blockIds count before filter:', queryResults?.blockIds?.length)
+
               if (queryResults) {
+                const beforeFilterCount = queryResults.blockIds.length
                 queryResults.blockIds = queryResults.blockIds.filter((id) => {
                   const block = recordMap.block[id]?.value as { properties?: any } | undefined
                   if (!block || !block.properties) {
@@ -78,6 +114,7 @@ export const getStaticProps = async (context) => {
 
                   return true
                 })
+                console.log('Tags getStaticProps: blockIds after filter:', queryResults.blockIds.length, '(was:', beforeFilterCount, ')')
               }
             }
           }
@@ -102,6 +139,8 @@ export const getStaticProps = async (context) => {
 }
 
 export async function getStaticPaths() {
+  console.log('Tags getStaticPaths: starting')
+
   if (!isDev) {
     const props = await resolveNotionPage(domain, rootNotionPageId)
 
@@ -109,17 +148,25 @@ export async function getStaticPaths() {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
       const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
+      console.log('Tags getStaticPaths: collection found:', !!collection)
+      console.log('Tags getStaticPaths: collection schema:', collection?.schema ? 'present' : 'missing')
+
       if (collection && collection.schema) {
-        const propertyToFilterSchema = Object.entries(collection.schema).find(
+        const propertyToFilter = Object.entries(collection.schema).find(
           (property) =>
             (property[1] as { name?: string } | undefined)?.name?.toLowerCase() === tagsPropertyNameLowerCase
-        )?.[1] as { options?: { value: string }[] } | undefined
+        )
+        const propertyToFilterSchema = propertyToFilter?.[1] as { options?: { value: string }[] } | undefined
+
+        console.log('Tags getStaticPaths: tags property found:', !!propertyToFilter)
+        console.log('Tags getStaticPaths: tags options count:', propertyToFilterSchema?.options?.length || 0)
 
         const paths = (propertyToFilterSchema?.options ?? [])
           .map((option) => normalizeTitle(option.value))
           .filter(Boolean)
           .map((tag) => ({params: {tagName: tag}}))
 
+        console.log('Tags getStaticPaths: generated paths:', paths)
         return {
           paths,
           fallback: true

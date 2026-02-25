@@ -59,10 +59,24 @@ export const getStaticProps = async () => {
             const originalLength = queryResults.blockIds.length
             totalPosts = originalLength
             console.log('Index getStaticProps: totalPosts:', totalPosts)
+            console.log('Index getStaticProps: original blockIds:', queryResults.blockIds.slice(0, 5), '...')
+
             // Create a new array instead of mutating in place
             const slicedBlockIds = queryResults.blockIds.slice(0, postsPerPage)
             queryResults.blockIds = slicedBlockIds
+            console.log('Index getStaticProps: sliced blockIds:', slicedBlockIds)
             console.log('Index getStaticProps: sliced from', originalLength, 'to', slicedBlockIds.length, 'posts')
+
+            // Also log the collection view block to see if it has child blocks
+            const collectionViewBlocks = Object.entries(recordMap.block).filter(([_, b]) => {
+              const blockValue = (b as any)?.value
+              return blockValue?.type === 'collection_view'
+            })
+            console.log('Index getStaticProps: collection_view blocks count:', collectionViewBlocks.length)
+            collectionViewBlocks.forEach(([id, b]) => {
+              const blockValue = (b as any)?.value
+              console.log('Index getStaticProps: collection_view block', id, 'content:', blockValue?.content?.length)
+            })
           } else {
             console.log('Index getStaticProps: no blockIds found in queryResults')
           }

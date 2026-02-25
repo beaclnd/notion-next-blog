@@ -236,28 +236,43 @@ export default function NotionTagsPage(props) {
       tagsPage: props.tagsPage,
       propertyToFilterName: props.propertyToFilterName,
       pageId: props.pageId,
-      recordMapBlockKeys: Object.keys(props.recordMap?.block || {}).length,
-      collectionKeys: Object.keys(props.recordMap?.collection || {}),
-      collectionQueryKeys: Object.keys(props.recordMap?.collection_query || {})
     })
 
-    // Log the collection schema if available
     const recordMap = props.recordMap
-    const collection = Object.values(recordMap?.collection || {})[0]?.value as Collection | undefined
-    if (collection?.schema) {
-      console.log('NotionTagsPage browser: schema keys:', Object.keys(collection.schema))
-      Object.entries(collection.schema).forEach(([key, prop]) => {
-        console.log('NotionTagsPage browser: property', key, ':', (prop as any)?.name, 'type:', (prop as any)?.type)
-      })
+    const collectionEntries = Object.entries(recordMap?.collection || {})
+    console.log('NotionTagsPage browser: collection entries count:', collectionEntries.length)
+
+    if (collectionEntries.length > 0) {
+      const [collectionId, collectionData] = collectionEntries[0]
+      console.log('NotionTagsPage browser: collectionId:', collectionId)
+      const collection = (collectionData as any)?.value as Collection | undefined
+      console.log('NotionTagsPage browser: collection schema:', collection?.schema ? 'exists' : 'missing')
+
+      if (collection?.schema) {
+        console.log('NotionTagsPage browser: schema entries:')
+        Object.entries(collection.schema).forEach(([key, prop]: [string, any]) => {
+          console.log('  -', key, ': name="' + prop?.name + '" type=' + prop?.type)
+          if (prop?.options) {
+            console.log('    options:', prop.options.map((o: any) => o.value))
+          }
+        })
+      }
     }
 
-    // Log the collection query data
-    const collectionId = Object.keys(recordMap?.collection || {})[0]
-    const collectionViewId = Object.keys(recordMap?.collection_view || {})[0]
-    if (collectionId && collectionViewId) {
-      const query = recordMap?.collection_query?.[collectionId]?.[collectionViewId]
-      console.log('NotionTagsPage browser: query found:', !!query)
-      console.log('NotionTagsPage browser: blockIds count:', query?.collection_group_results?.blockIds?.length || query?.blockIds?.length)
+    // Check a sample blog post for its properties
+    const sampleBlockId = Object.keys(recordMap?.block || {}).find(id => {
+      const block = recordMap.block[id]?.value as any
+      return block?.type === 'page' && block?.parent_table === 'collection'
+    })
+    if (sampleBlockId) {
+      const block = recordMap.block[sampleBlockId]?.value as any
+      console.log('NotionTagsPage browser: Sample blog post properties:')
+      console.log('  Block ID:', sampleBlockId)
+      console.log('  Title:', block?.properties?.title?.[0]?.[0])
+      console.log('  All property keys:', Object.keys(block?.properties || {}))
+      Object.entries(block?.properties || {}).forEach(([key, val]) => {
+        console.log('  Property', key, ':', JSON.stringify(val).slice(0, 100))
+      })
     }
   }
   return <NotionPage {...props} />

@@ -261,38 +261,63 @@ export default function NotionTagsPage(props) {
         if (propertyToFilterId) {
           console.log('Client-side filtering: tag:', normalizedTag, 'propertyId:', propertyToFilterId)
 
-          // Find all collection_view blocks
-          const collectionViewBlocks = Object.entries(recordMap.block).filter(([_, block]: [string, any]) =>
-            block?.value?.type === 'collection_view'
+          // Find all blocks that might contain the collection
+          // The collection could be in different block types
+          const allBlocks = Object.entries(recordMap.block)
+          console.log('NotionTagsPage: Total blocks:', allBlocks.length)
+
+          // Look for blocks that have content array (these could be collection containers)
+          const blocksWithContent = allBlocks.filter(([_, block]: [string, any]) =>
+            block?.value?.content && Array.isArray(block?.value?.content)
           )
-          console.log('NotionTagsPage: collection_view blocks found:', collectionViewBlocks.length)
+          console.log('NotionTagsPage: blocks with content:', blocksWithContent.length)
 
-          if (collectionViewBlocks.length > 0) {
-            collectionViewBlocks.forEach(([blockId, blockData]: [string, any]) => {
-              console.log('NotionTagsPage: Processing block', blockId)
-              console.log('NotionTagsPage: block view_ids:', blockData?.value?.view_ids)
-              console.log('NotionTagsPage: block content before:', blockData?.value?.content?.length)
+          // Log first few blocks to understand structure
+          allBlocks.slice(0, 5).forEach(([blockId, block]: [string, any]) => {
+            console.log('NotionTagsPage: Sample block', blockId, 'type:', block?.value?.type, 'has content:', !!block?.value?.content)
+          })
 
-              const originalContent = blockData?.value?.content || []
-              const filteredContent = originalContent.filter((id: string) => {
-                const block = recordMap.block[id]?.value as { properties?: any } | undefined
-                const value = block?.properties?.[propertyToFilterId]?.[0]?.[0]
-                console.log('NotionTagsPage: Checking post', id, 'tag value:', value)
-                if (!value) return false
-                const values = value.split(',')
-                const hasTag = values.find((v: string) => normalizeTitle(v) === normalizedTag)
-                console.log('NotionTagsPage: Post', id, 'has tag', normalizedTag, ':', !!hasTag)
-                return hasTag
-              })
+          // The collection is usually in the collection_query results
+          // Let's look at collection_query to find the posts
+          const collectionId = Object.keys(recordMap.collection)[0]
+          const collectionViewId = Object.keys(recordMap.collection_view)[0]
+          const queryResults = recordMap.collection_query?.[collectionId]?.[collectionViewId]
 
-              console.log('Client-side filtering: original posts:', originalContent.length, 'filtered:', filteredContent.length)
+          console.log('NotionTagsPage: collectionId:', collectionId)
+          console.log('NotionTagsPage: collectionViewId:', collectionViewId)
+          console.log('NotionTagsPage: queryResults:', queryResults ? 'found' : 'missing')
 
-              // Update the block content
-              if (blockData?.value) {
-                blockData.value.content = filteredContent
-                console.log('NotionTagsPage: block content after:', blockData.value.content.length)
-              }
+          if (queryResults?.blockIds) {
+            console.log('NotionTagsPage: queryResults.blockIds count:', queryResults.blockIds.length)
+
+            const originalBlockIds = [...queryResults.blockIds]
+            const filteredBlockIds = originalBlockIds.filter((id: string) => {
+              const block = recordMap.block[id]?.value as { properties?: any } | undefined
+              const value = block?.properties?.[propertyToFilterId]?.[0]?.[0]
+              console.log('NotionTagsPage: Checking post', id, 'tag value:', value)
+              if (!value) return false
+              const values = value.split(',')
+              const hasTag = values.find((v: string) => normalizeTitle(v) === normalizedTag)
+              console.log('NotionTagsPage: Post', id, 'has tag', normalizedTag, ':', !!hasTag)
+              return hasTag
             })
+
+            console.log('Client-side filtering: original posts:', originalBlockIds.length, 'filtered:', filteredBlockIds.length)
+
+            // Update the query results
+            queryResults.blockIds = filteredBlockIds
+            console.log('NotionTagsPage: Updated queryResults.blockIds:', queryResults.blockIds.length)
+
+            // Also need to find and update the block that contains these as content
+            // Look for the collection block (usually the one with the collection_id)
+            const collectionBlock = Object.values(recordMap.block).find((block: any) =>
+              block?.value?.collection_id === collectionId
+            ) as any
+
+            if (collectionBlock?.value?.content) {
+              console.log('NotionTagsPage: Found collection block, updating content from', collectionBlock.value.content.length, 'to', filteredBlockIds.length)
+              collectionBlock.value.content = filteredBlockIds
+            }
           }
         }
       }

@@ -100,6 +100,20 @@ export const getStaticProps = async (context) => {
 
               if (queryResults) {
                 const beforeFilterCount = queryResults.blockIds.length
+                console.log('Tags getStaticProps: Starting filter, checking', beforeFilterCount, 'blocks')
+                console.log('Tags getStaticProps: Looking for propertyId:', propertyToFilterId, 'with value:', filteredValue)
+
+                // Debug first few blocks to see their structure
+                const sampleBlocks = queryResults.blockIds.slice(0, 3).map(id => {
+                  const block = recordMap.block[id]?.value as { properties?: any } | undefined
+                  return {
+                    id,
+                    hasProperties: !!block?.properties,
+                    tagValue: block?.properties?.[propertyToFilterId]
+                  }
+                })
+                console.log('Tags getStaticProps: Sample blocks:', sampleBlocks)
+
                 const filteredBlockIds = queryResults.blockIds.filter((id) => {
                   const block = recordMap.block[id]?.value as { properties?: any } | undefined
                   if (!block || !block.properties) {
@@ -204,5 +218,16 @@ export async function getStaticPaths() {
 }
 
 export default function NotionTagsPage(props) {
+  // Debug logging in browser
+  if (typeof window !== 'undefined') {
+    console.log('NotionTagsPage browser props:', {
+      tagsPage: props.tagsPage,
+      propertyToFilterName: props.propertyToFilterName,
+      pageId: props.pageId,
+      recordMapBlockKeys: Object.keys(props.recordMap?.block || {}).length,
+      collectionKeys: Object.keys(props.recordMap?.collection || {}),
+      collectionQueryKeys: Object.keys(props.recordMap?.collection_query || {})
+    })
+  }
   return <NotionPage {...props} />
 }

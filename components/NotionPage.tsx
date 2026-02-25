@@ -278,14 +278,26 @@ export const NotionPage: React.FC<types.PageProps> = ({
       // The Notion API now returns blocks with id at the top level, not in value
       // Structure: { id: "...", role: "...", value: { ... } }
       const blockWrapper = blockData as any
-      const blockValue = blockWrapper.value
       
-      // Ensure the value has an id - copy from wrapper if needed
-      if (blockValue && !blockValue.id && blockWrapper.id) {
-        blockValue.id = blockWrapper.id
+      // Create a deep copy to avoid modifying original data
+      let cleanBlockData = { ...blockWrapper }
+      
+      if (blockWrapper.value) {
+        // Copy value and ensure it has an id
+        cleanBlockData.value = { ...blockWrapper.value }
+        
+        // The id might be at wrapper level (new API) - copy it to value
+        if (!cleanBlockData.value.id && blockWrapper.id) {
+          cleanBlockData.value.id = blockWrapper.id
+        }
+        
+        // If still no id, use the key as fallback
+        if (!cleanBlockData.value.id) {
+          cleanBlockData.value.id = key
+        }
       }
       
-      cleanBlocks[key] = blockData
+      cleanBlocks[key] = cleanBlockData
     }
     
     return {
@@ -333,6 +345,11 @@ export const NotionPage: React.FC<types.PageProps> = ({
   // Ensure block has id - copy from wrapper if needed (new API format)
   if (block && !block.id && blockWrapper?.id) {
     block = { ...block, id: blockWrapper.id }
+  }
+  
+  // Final fallback - if still no block id, use the targetId
+  if (block && !block.id && targetId) {
+    block = { ...block, id: targetId }
   }
 
   // Debug logging - enabled in both dev and production for troubleshooting

@@ -94,10 +94,12 @@ export async function resolveNotionPage(domain: string, rawPageId?: string) {
       if (blockKeys.length > 0) {
         console.log('First block key:', blockKeys[0])
         const firstBlock = recordMap.block[blockKeys[0]] as any
-        const wrapperId = firstBlock?.id
-        const valueId = firstBlock?.value?.id
-        console.log('First block wrapper id:', wrapperId || 'no wrapper id')
-        console.log('First block value id:', valueId || 'no value id')
+        console.log('First block structure:', JSON.stringify({
+          hasId: !!firstBlock?.id,
+          hasValue: !!firstBlock?.value,
+          valueHasId: !!firstBlock?.value?.id,
+          keys: firstBlock ? Object.keys(firstBlock) : 'none'
+        }))
       } else {
         console.warn('No blocks found in recordMap')
       }

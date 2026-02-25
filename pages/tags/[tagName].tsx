@@ -75,19 +75,31 @@ export const getStaticProps = async (context) => {
               ...omit(recordMap.block, [galleryBlockValue.id])
             }
 
+            // Debug: Log the full schema
+            console.log('Tags getStaticProps: Full schema keys:', Object.keys(collection.schema || {}))
+            console.log('Tags getStaticProps: Full schema:', JSON.stringify(collection.schema, null, 2).slice(0, 2000))
+
             const propertyToFilter = Object.entries(collection.schema).find(
-              (property) =>
-                (property[1] as { name?: string } | undefined)?.name?.toLowerCase() === tagsPropertyNameLowerCase
+              (property) => {
+                const propName = (property[1] as { name?: string } | undefined)?.name?.toLowerCase()
+                console.log('Tags getStaticProps: Checking property:', property[0], 'name:', propName)
+                return propName === tagsPropertyNameLowerCase
+              }
             )
             const propertyToFilterId = propertyToFilter?.[0]
             const filteredValue = normalizeTitle(rawTagName)
             const propertyToFilterSchemaEntry = propertyToFilter?.[1] as { options?: { value: string }[] } | undefined
+
+            console.log('Tags getStaticProps: propertyToFilter found:', !!propertyToFilter)
+            console.log('Tags getStaticProps: propertyToFilterId:', propertyToFilterId)
+            console.log('Tags getStaticProps: propertyToFilterSchemaEntry:', JSON.stringify(propertyToFilterSchemaEntry, null, 2).slice(0, 500))
+            console.log('Tags getStaticProps: filteredValue:', filteredValue)
+            console.log('Tags getStaticProps: options:', propertyToFilterSchemaEntry?.options?.map(o => ({ value: o.value, normalized: normalizeTitle(o.value) })))
+
             propertyToFilterName = propertyToFilterSchemaEntry?.options?.find(
               (option) => normalizeTitle(option.value) === filteredValue
             )?.value
 
-            console.log('Tags getStaticProps: propertyToFilterId:', propertyToFilterId)
-            console.log('Tags getStaticProps: filteredValue:', filteredValue)
             console.log('Tags getStaticProps: propertyToFilterName:', propertyToFilterName)
 
             if (propertyToFilterId && filteredValue) {

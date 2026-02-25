@@ -100,7 +100,7 @@ export const getStaticProps = async (context) => {
 
               if (queryResults) {
                 const beforeFilterCount = queryResults.blockIds.length
-                queryResults.blockIds = queryResults.blockIds.filter((id) => {
+                const filteredBlockIds = queryResults.blockIds.filter((id) => {
                   const block = recordMap.block[id]?.value as { properties?: any } | undefined
                   if (!block || !block.properties) {
                     return false
@@ -122,7 +122,19 @@ export const getStaticProps = async (context) => {
 
                   return true
                 })
-                console.log('Tags getStaticProps: blockIds after filter:', queryResults.blockIds.length, '(was:', beforeFilterCount, ')')
+
+                // Update the query results
+                queryResults.blockIds = filteredBlockIds
+                console.log('Tags getStaticProps: blockIds after filter:', filteredBlockIds.length, '(was:', beforeFilterCount, ')')
+
+                // Also need to update the collection view block's content to match
+                // because react-notion-x renders based on block content, not queryResults
+                if (galleryBlockValue?.id && recordMap.block[galleryBlockValue.id]?.value) {
+                  const galleryBlock = recordMap.block[galleryBlockValue.id].value as any
+                  console.log('Tags getStaticProps: galleryBlock content before:', galleryBlock.content?.length)
+                  galleryBlock.content = filteredBlockIds
+                  console.log('Tags getStaticProps: galleryBlock content after:', galleryBlock.content?.length)
+                }
               }
             }
           }

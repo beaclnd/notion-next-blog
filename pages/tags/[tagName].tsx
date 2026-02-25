@@ -240,6 +240,25 @@ export default function NotionTagsPage(props) {
       collectionKeys: Object.keys(props.recordMap?.collection || {}),
       collectionQueryKeys: Object.keys(props.recordMap?.collection_query || {})
     })
+
+    // Log the collection schema if available
+    const recordMap = props.recordMap
+    const collection = Object.values(recordMap?.collection || {})[0]?.value as Collection | undefined
+    if (collection?.schema) {
+      console.log('NotionTagsPage browser: schema keys:', Object.keys(collection.schema))
+      Object.entries(collection.schema).forEach(([key, prop]) => {
+        console.log('NotionTagsPage browser: property', key, ':', (prop as any)?.name, 'type:', (prop as any)?.type)
+      })
+    }
+
+    // Log the collection query data
+    const collectionId = Object.keys(recordMap?.collection || {})[0]
+    const collectionViewId = Object.keys(recordMap?.collection_view || {})[0]
+    if (collectionId && collectionViewId) {
+      const query = recordMap?.collection_query?.[collectionId]?.[collectionViewId]
+      console.log('NotionTagsPage browser: query found:', !!query)
+      console.log('NotionTagsPage browser: blockIds count:', query?.collection_group_results?.blockIds?.length || query?.blockIds?.length)
+    }
   }
   return <NotionPage {...props} />
 }

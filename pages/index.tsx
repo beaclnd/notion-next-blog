@@ -40,22 +40,41 @@ export const getStaticProps = async () => {
     if (collection) {
         const galleryViewId = getGalleryViewId(recordMap)
         console.log('Index getStaticProps: galleryViewId:', galleryViewId)
+        console.log('Index getStaticProps: collection_query:', JSON.stringify(Object.keys(recordMap.collection_query || {})))
 
         if (galleryViewId) {
-          const query = recordMap.collection_query[collection.id]?.[galleryViewId]
-          const queryResults = query?.collection_group_results ?? query
+          const collectionQueries = recordMap.collection_query[collection.id]
+          console.log('Index getStaticProps: collectionQueries for', collection.id, ':', !!collectionQueries)
+          console.log('Index getStaticProps: collectionQueries keys:', collectionQueries ? Object.keys(collectionQueries) : 'none')
 
-          if (queryResults) {
+          const query = collectionQueries?.[galleryViewId]
+          console.log('Index getStaticProps: query for galleryView:', !!query)
+
+          const queryResults = query?.collection_group_results ?? query
+          console.log('Index getStaticProps: queryResults type:', typeof queryResults)
+          console.log('Index getStaticProps: queryResults keys:', queryResults ? Object.keys(queryResults) : 'none')
+
+          if (queryResults?.blockIds) {
             curPage = 1
-            totalPosts = queryResults.blockIds.length
+            const originalLength = queryResults.blockIds.length
+            totalPosts = originalLength
             console.log('Index getStaticProps: totalPosts:', totalPosts)
-            queryResults.blockIds = queryResults.blockIds.slice(0, postsPerPage)
-            console.log('Index getStaticProps: sliced to', queryResults.blockIds.length, 'posts for page 1')
+            // Create a new array instead of mutating in place
+            const slicedBlockIds = queryResults.blockIds.slice(0, postsPerPage)
+            queryResults.blockIds = slicedBlockIds
+            console.log('Index getStaticProps: sliced from', originalLength, 'to', slicedBlockIds.length, 'posts')
+          } else {
+            console.log('Index getStaticProps: no blockIds found in queryResults')
           }
+        } else {
+          console.log('Index getStaticProps: no galleryViewId found')
         }
+    } else {
+        console.log('Index getStaticProps: no collection found')
     }
 
-    return { props: {...props, curPage, totalPosts } }
+    console.log('Index getStaticProps: FINAL curPage:', curPage, 'totalPosts:', totalPosts)
+    return { props: {...props, curPage, totalPosts} }
   } catch (err) {
     console.error('page error', domain, err)
 

@@ -239,6 +239,9 @@ export const NotionPage: React.FC<types.PageProps> = ({
   curPage,
   totalPosts
 }) => {
+  // Debug logging
+  console.log('NotionPage received props:', { curPage, totalPosts, postsPerPage: config.postsPerPage, isDev: config.isDev })
+
   const router = useRouter()
   const lite = useSearchParam('lite')
 

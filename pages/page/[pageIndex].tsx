@@ -5,6 +5,12 @@ import { NotionPage } from '@/components/NotionPage'
 import { domain, isDev, postsPerPage, rootNotionPageId } from '@/lib/config'
 import { resolveNotionPage } from '@/lib/resolve-notion-page'
 
+function getCollectionId(recordMap: ExtendedRecordMap): string | undefined {
+  // Get the collection ID from the entry key, not from the value's id property
+  const collectionEntry = Object.entries(recordMap.collection)[0]
+  return collectionEntry?.[0]
+}
+
 function getGalleryViewId(recordMap: ExtendedRecordMap): string | undefined {
   const views = Object.values(recordMap.collection_view)
   console.log('Pagination: Found', views.length, 'collection views')
@@ -39,18 +45,19 @@ export const getStaticProps = async (context) => {
     // For pagination
     let totalPosts = 0
     const recordMap = (props as any).recordMap as ExtendedRecordMap
+    const collectionId = getCollectionId(recordMap)
     const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
     console.log('Pagination getStaticProps: collection found:', !!collection)
-    console.log('Pagination getStaticProps: collection id:', collection?.id)
+    console.log('Pagination getStaticProps: collectionId:', collectionId)
     console.log('Pagination getStaticProps: collection_query keys:', Object.keys(recordMap.collection_query || {}))
 
-    if (collection) {
+    if (collectionId && collection) {
         const galleryViewId = getGalleryViewId(recordMap)
         console.log('Pagination getStaticProps: galleryViewId:', galleryViewId)
 
         if (galleryViewId) {
-          const query = recordMap.collection_query[collection.id]?.[galleryViewId]
+          const query = recordMap.collection_query[collectionId]?.[galleryViewId]
           console.log('Pagination getStaticProps: query found:', !!query)
           console.log('Pagination getStaticProps: query keys:', query ? Object.keys(query) : 'none')
 
@@ -89,16 +96,18 @@ export async function getStaticPaths() {
 
     let totalPosts = 0
     const recordMap = (props as any).recordMap as ExtendedRecordMap
+    const collectionId = getCollectionId(recordMap)
     const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
     console.log('Pagination getStaticPaths: collection found:', !!collection)
+    console.log('Pagination getStaticPaths: collectionId:', collectionId)
 
-    if (collection) {
+    if (collectionId && collection) {
         const galleryViewId = getGalleryViewId(recordMap)
         console.log('Pagination getStaticPaths: galleryViewId:', galleryViewId)
 
         if (galleryViewId) {
-          const query = recordMap.collection_query[collection.id]?.[galleryViewId]
+          const query = recordMap.collection_query[collectionId]?.[galleryViewId]
           const queryResults = query?.collection_group_results ?? query
           if (queryResults) {
             totalPosts = queryResults.blockIds.length

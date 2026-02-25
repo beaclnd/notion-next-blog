@@ -9,6 +9,12 @@ import { resolveNotionPage } from 'lib/resolve-notion-page'
 
 const tagsPropertyNameLowerCase = 'tags'
 
+function getCollectionId(recordMap: ExtendedRecordMap): string | undefined {
+  // Get the collection ID from the entry key, not from the value's id property
+  const collectionEntry = Object.entries(recordMap.collection)[0]
+  return collectionEntry?.[0]
+}
+
 function getGalleryView(recordMap: ExtendedRecordMap): CollectionView | undefined {
   const views = Object.values(recordMap.collection_view)
   console.log('Tags: Found', views.length, 'collection views')
@@ -43,12 +49,14 @@ export const getStaticProps = async (context) => {
 
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
+      const collectionId = getCollectionId(recordMap)
       const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
 
       console.log('Tags getStaticProps: collection found:', !!collection)
+      console.log('Tags getStaticProps: collectionId:', collectionId)
       console.log('Tags getStaticProps: collection schema:', collection?.schema ? 'present' : 'missing')
 
-      if (collection) {
+      if (collectionId && collection) {
         const galleryView = getGalleryView(recordMap)
 
         if (galleryView) {
@@ -84,7 +92,7 @@ export const getStaticProps = async (context) => {
 
             if (propertyToFilterId && filteredValue) {
               const query =
-                recordMap.collection_query[collection.id]?.[galleryView.id]
+                recordMap.collection_query[collectionId]?.[galleryView.id]
               const queryResults = query?.collection_group_results ?? query
 
               console.log('Tags getStaticProps: query found:', !!query)

@@ -39,8 +39,6 @@ export async function pageAcl({
 
   const rootBlock = recordMap.block[rootKey] as any
   const rootValue = rootBlock?.value as Block | undefined
-  // The id might be at the wrapper level (new API format) or in value (old format)
-  const rootBlockId = rootBlock?.id || rootValue?.id
   const rootSpaceId = rootValue?.space_id
 
   if (

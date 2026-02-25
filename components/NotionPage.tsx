@@ -375,7 +375,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
         { config.isGiscusEnabled && isBlogPost && <GiscusComment pageId={pageId} isDarkMode={isDarkMode} />}
       </>
     ), 
-    [curPage, totalPosts, isBlogPost, isDarkMode]
+    [curPage, totalPosts, isBlogPost, isDarkMode, pageId]
   )
 
   const footer = React.useMemo(() => <Footer />, [])

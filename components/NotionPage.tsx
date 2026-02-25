@@ -280,7 +280,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
       const blockWrapper = blockData as any
       
       // Create a deep copy to avoid modifying original data
-      let cleanBlockData = { ...blockWrapper }
+      const cleanBlockData = { ...blockWrapper }
       
       if (blockWrapper.value) {
         // Copy value and ensure it has an id

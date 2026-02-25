@@ -328,7 +328,11 @@ export const NotionPage: React.FC<types.PageProps> = ({
       targetId,
       blockKeysCount: keys.length,
       firstBlockKey: keys[0],
+      targetIdNormalized: targetId?.replace(/-/g, ''),
+      firstBlockKeyNormalized: keys[0]?.replace(/-/g, ''),
       blockFound: !!block,
+      directLookup: !!cleanRecordMap?.block?.[targetId],
+      normalizedLookup: keys.some(k => k.replace(/-/g, '') === targetId?.replace(/-/g, '')),
       blockId: block?.id,
       blockType: block?.type,
       error: error
@@ -375,6 +379,7 @@ export const NotionPage: React.FC<types.PageProps> = ({
   }
 
   if (error || !site || !block) {
+    console.log('Rendering 404 - error or missing data:', { error, siteExists: !!site, blockExists: !!block, pageId })
     return <Page404 site={site} pageId={pageId} error={error} />
   }
 

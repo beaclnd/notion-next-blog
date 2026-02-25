@@ -275,11 +275,16 @@ export const NotionPage: React.FC<types.PageProps> = ({
       // Skip blocks without any data
       if (!blockData) continue
       
-      const blockValue = (blockData as any).value
-      // Ensure block has an id - use the key as fallback
-      if (blockValue && !blockValue.id) {
-        blockValue.id = key
+      // The Notion API now returns blocks with id at the top level, not in value
+      // Structure: { id: "...", role: "...", value: { ... } }
+      const blockWrapper = blockData as any
+      const blockValue = blockWrapper.value
+      
+      // Ensure the value has an id - copy from wrapper if needed
+      if (blockValue && !blockValue.id && blockWrapper.id) {
+        blockValue.id = blockWrapper.id
       }
+      
       cleanBlocks[key] = blockData
     }
     
@@ -302,7 +307,9 @@ export const NotionPage: React.FC<types.PageProps> = ({
   const targetId = pageId || site?.rootNotionPageId
   
   // Try to find the block that matches the pageId
-  let block = cleanRecordMap?.block?.[targetId]?.value as Block | undefined
+  // The id might be at the wrapper level (new API) or in value (old API)
+  let blockWrapper = cleanRecordMap?.block?.[targetId] as any
+  let block = blockWrapper?.value as Block | undefined
   
   // If not found directly, try with and without dashes
   if (!block && targetId) {
@@ -310,7 +317,8 @@ export const NotionPage: React.FC<types.PageProps> = ({
     for (const key of keys) {
       const keyNormalized = key.replace(/-/g, '')
       if (keyNormalized === normalizedId) {
-        block = cleanRecordMap?.block?.[key]?.value as Block | undefined
+        blockWrapper = cleanRecordMap?.block?.[key] as any
+        block = blockWrapper?.value as Block | undefined
         break
       }
     }
@@ -318,7 +326,13 @@ export const NotionPage: React.FC<types.PageProps> = ({
   
   // Fallback to first block if still not found (shouldn't happen in normal cases)
   if (!block && keys.length > 0) {
-    block = cleanRecordMap?.block?.[keys[0]]?.value as Block | undefined
+    blockWrapper = cleanRecordMap?.block?.[keys[0]] as any
+    block = blockWrapper?.value as Block | undefined
+  }
+  
+  // Ensure block has id - copy from wrapper if needed (new API format)
+  if (block && !block.id && blockWrapper?.id) {
+    block = { ...block, id: blockWrapper.id }
   }
 
   // Debug logging - enabled in both dev and production for troubleshooting

@@ -234,5 +234,54 @@ export async function getStaticPaths() {
 }
 
 export default function NotionTagsPage(props) {
+  // Client-side filtering fallback for dev mode
+  if (typeof window !== 'undefined' && props.recordMap && props.tagsPage) {
+    const recordMap = props.recordMap as ExtendedRecordMap
+    const tagName = (props as any).propertyToFilterName || window.location.pathname.split('/').pop()
+
+    if (tagName) {
+      const normalizedTag = normalizeTitle(tagName)
+
+      // Find the Tags property ID from schema
+      const collectionData = Object.values(recordMap.collection)[0] as any
+      const schema = collectionData?.value?.value?.schema
+
+      if (schema) {
+        const tagsProperty = Object.entries(schema).find(([_, prop]: [string, any]) =>
+          prop?.name?.toLowerCase() === 'tags'
+        )
+        const propertyToFilterId = tagsProperty?.[0]
+
+        if (propertyToFilterId) {
+          console.log('Client-side filtering: tag:', normalizedTag, 'propertyId:', propertyToFilterId)
+
+          // Find gallery view block and filter its content
+          const collectionViewBlock = Object.entries(recordMap.block).find(([_, block]: [string, any]) =>
+            block?.value?.type === 'collection_view'
+          )
+
+          if (collectionViewBlock) {
+            const [blockId, blockData] = collectionViewBlock
+            const originalContent = blockData?.value?.content || []
+            const filteredContent = originalContent.filter((id: string) => {
+              const block = recordMap.block[id]?.value as { properties?: any } | undefined
+              const value = block?.properties?.[propertyToFilterId]?.[0]?.[0]
+              if (!value) return false
+              const values = value.split(',')
+              return values.find((v: string) => normalizeTitle(v) === normalizedTag)
+            })
+
+            console.log('Client-side filtering: original posts:', originalContent.length, 'filtered:', filteredContent.length)
+
+            // Update the block content
+            if (blockData?.value) {
+              blockData.value.content = filteredContent
+            }
+          }
+        }
+      }
+    }
+  }
+
   return <NotionPage {...props} />
 }

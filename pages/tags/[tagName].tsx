@@ -50,13 +50,15 @@ export const getStaticProps = async (context) => {
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
       const collectionId = getCollectionId(recordMap)
-      const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
+      // Get collection data - structure is { spaceId, value: { value: collection, role } }
+      const collectionData = Object.values(recordMap.collection)[0] as any
+      // Access schema at collectionData.value.value.schema
+      const schema = collectionData?.value?.value?.schema
 
-      console.log('Tags getStaticProps: collection found:', !!collection)
       console.log('Tags getStaticProps: collectionId:', collectionId)
-      console.log('Tags getStaticProps: collection schema:', collection?.schema ? 'present' : 'missing')
+      console.log('Tags getStaticProps: schema found:', !!schema)
 
-      if (collectionId && collection) {
+      if (collectionId && schema) {
         const galleryView = getGalleryView(recordMap)
 
         if (galleryView) {
@@ -69,22 +71,13 @@ export const getStaticProps = async (context) => {
           const galleryBlockValue = galleryBlock?.value as { id?: string } | undefined
           console.log('Tags getStaticProps: galleryBlock found:', !!galleryBlockValue?.id)
 
-          if (galleryBlockValue?.id && collection.schema) {
+          if (galleryBlockValue?.id) {
             recordMap.block = {
               [galleryBlockValue.id]: galleryBlock,
               ...omit(recordMap.block, [galleryBlockValue.id])
             }
 
-            // Schema is at collection.value.schema (nested in the collection value)
-            const schema = (collection as any)?.value?.schema || collection.schema
-            console.log('Tags getStaticProps: Schema found:', !!schema)
-
-            if (!schema) {
-              console.log('Tags getStaticProps: No schema found in collection')
-              console.log('Tags getStaticProps: Collection structure:', JSON.stringify(Object.keys(collection as any), null, 2))
-            } else {
-              console.log('Tags getStaticProps: Full schema keys:', Object.keys(schema || {}))
-            }
+            console.log('Tags getStaticProps: Full schema keys:', Object.keys(schema))
 
             const propertyToFilter = schema ? Object.entries(schema).find(
               (property) => {
@@ -201,12 +194,11 @@ export async function getStaticPaths() {
 
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
-      const collection = Object.values(recordMap.collection)[0]?.value as Collection | undefined
+      // Get collection data - structure is { spaceId, value: { value: collection, role } }
+      const collectionData = Object.values(recordMap.collection)[0] as any
+      // Access schema at collectionData.value.value.schema
+      const schema = collectionData?.value?.value?.schema
 
-      console.log('Tags getStaticPaths: collection found:', !!collection)
-
-      // Schema is at collection.value.schema (nested)
-      const schema = (collection as any)?.value?.schema || collection?.schema
       console.log('Tags getStaticPaths: schema found:', !!schema)
 
       if (schema) {

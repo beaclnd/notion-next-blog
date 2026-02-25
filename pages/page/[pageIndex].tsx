@@ -81,6 +81,8 @@ export const getStaticProps = async (context) => {
 
 export async function getStaticPaths() {
   console.log('Pagination getStaticPaths: starting')
+  console.log('Pagination getStaticPaths: isDev:', isDev)
+  console.log('Pagination getStaticPaths: NODE_ENV:', process.env.NODE_ENV)
 
   if (!isDev) {
     const props = await resolveNotionPage(domain, rootNotionPageId)

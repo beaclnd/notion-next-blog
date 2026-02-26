@@ -9,14 +9,10 @@ import { notion } from './notion-api'
 const uuid = !!includeNotionIdInUrls
 
 export async function getSiteMap(): Promise<types.SiteMap> {
-  console.log('getSiteMap: Starting with rootPageId:', config.rootNotionPageId)
-
   const partialSiteMap = await getAllPagesImpl(
     config.rootNotionPageId,
     config.rootNotionSpaceId
   )
-
-  console.log('getSiteMap: Returning', Object.keys(partialSiteMap.canonicalPageMap || {}).length, 'pages')
 
   return {
     site: config.site,
@@ -29,20 +25,14 @@ async function getAllPagesImpl(
   rootNotionSpaceId: string
 ): Promise<Partial<types.SiteMap>> {
   const getPage = async (pageId: string, ...args) => {
-    console.log('notion getPage', uuidToId(pageId))
     return notion.getPage(pageId, ...args)
   }
-
-  console.log('getAllPagesImpl: Starting getAllPagesInSpace for root:', rootNotionPageId)
 
   const pageMap = await getAllPagesInSpace(
     rootNotionPageId,
     rootNotionSpaceId,
     getPage
   )
-
-  console.log('getAllPagesImpl: getAllPagesInSpace returned', Object.keys(pageMap).length, 'pages')
-  console.log('getAllPagesImpl: pageMap keys:', Object.keys(pageMap))
 
   const canonicalPageMap = Object.keys(pageMap).reduce(
     (map, pageId: string) => {
@@ -77,8 +67,6 @@ async function getAllPagesImpl(
     },
     {}
   )
-
-  console.log('getAllPagesImpl: canonicalPageMap has', Object.keys(canonicalPageMap).length, 'entries')
 
   return {
     pageMap,

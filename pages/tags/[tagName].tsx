@@ -10,38 +10,30 @@ import { resolveNotionPage } from 'lib/resolve-notion-page'
 const tagsPropertyNameLowerCase = 'tags'
 
 function getCollectionId(recordMap: ExtendedRecordMap): string | undefined {
-  // Get the collection ID from the entry key, not from the value's id property
   const collectionEntry = Object.entries(recordMap.collection)[0]
   return collectionEntry?.[0]
 }
 
 function getGalleryView(recordMap: ExtendedRecordMap): CollectionView | undefined {
   const views = Object.values(recordMap.collection_view)
-  console.log('Tags: Found', views.length, 'collection views')
 
   for (const view of views) {
     const viewValue = (view as any)?.value as CollectionView | undefined
-    console.log('Tags: Checking view type:', viewValue?.type, 'id:', viewValue?.id)
     if (viewValue?.type === 'gallery') {
-      console.log('Tags: Found gallery view with id:', viewValue.id)
       return viewValue
     }
   }
 
-  // Fallback to first view if no gallery found
   if (views.length > 0) {
     const firstView = (views[0] as any)?.value as CollectionView | undefined
-    console.log('Tags: No gallery view found, using first view:', firstView?.id)
     return firstView
   }
 
-  console.log('Tags: No views found')
   return undefined
 }
 
 export const getStaticProps = async (context) => {
   const rawTagName = (context?.params?.tagName as string) || ''
-  console.log('Tags getStaticProps: tagName:', rawTagName)
 
   try {
     const props = await resolveNotionPage(domain, rootNotionPageId)
@@ -50,13 +42,8 @@ export const getStaticProps = async (context) => {
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
       const collectionId = getCollectionId(recordMap)
-      // Get collection data - structure is { spaceId, value: { value: collection, role } }
       const collectionData = Object.values(recordMap.collection)[0] as any
-      // Access schema at collectionData.value.value.schema
       const schema = collectionData?.value?.value?.schema
-
-      console.log('Tags getStaticProps: collectionId:', collectionId)
-      console.log('Tags getStaticProps: schema found:', !!schema)
 
       if (collectionId && schema) {
         const galleryView = getGalleryView(recordMap)
@@ -69,7 +56,6 @@ export const getStaticProps = async (context) => {
           )
 
           const galleryBlockValue = galleryBlock?.value as { id?: string } | undefined
-          console.log('Tags getStaticProps: galleryBlock found:', !!galleryBlockValue?.id)
 
           if (galleryBlockValue?.id) {
             recordMap.block = {
@@ -77,12 +63,9 @@ export const getStaticProps = async (context) => {
               ...omit(recordMap.block, [galleryBlockValue.id])
             }
 
-            console.log('Tags getStaticProps: Full schema keys:', Object.keys(schema))
-
             const propertyToFilter = schema ? Object.entries(schema).find(
               (property) => {
                 const propName = (property[1] as { name?: string } | undefined)?.name?.toLowerCase()
-                console.log('Tags getStaticProps: Checking property:', property[0], 'name:', propName)
                 return propName === tagsPropertyNameLowerCase
               }
             ) : null
@@ -90,49 +73,29 @@ export const getStaticProps = async (context) => {
             const filteredValue = normalizeTitle(rawTagName)
             const propertyToFilterSchemaEntry = propertyToFilter?.[1] as { options?: { value: string }[] } | undefined
 
-            console.log('Tags getStaticProps: propertyToFilter found:', !!propertyToFilter)
-            console.log('Tags getStaticProps: propertyToFilterId:', propertyToFilterId)
-            console.log('Tags getStaticProps: propertyToFilterSchemaEntry:', JSON.stringify(propertyToFilterSchemaEntry, null, 2).slice(0, 500))
-            console.log('Tags getStaticProps: filteredValue:', filteredValue)
-            console.log('Tags getStaticProps: options:', propertyToFilterSchemaEntry?.options?.map(o => ({ value: o.value, normalized: normalizeTitle(o.value) })))
-
             propertyToFilterName = propertyToFilterSchemaEntry?.options?.find(
               (option) => normalizeTitle(option.value) === filteredValue
             )?.value
-
-            console.log('Tags getStaticProps: propertyToFilterName:', propertyToFilterName)
 
             if (propertyToFilterId && filteredValue) {
               const query =
                 recordMap.collection_query[collectionId]?.[galleryView.id]
               const queryResults = query?.collection_group_results ?? query
 
-              console.log('Tags getStaticProps: query found:', !!query)
-              console.log('Tags getStaticProps: queryResults blockIds count before filter:', queryResults?.blockIds?.length)
-
               if (queryResults) {
-                const beforeFilterCount = queryResults.blockIds.length
-                console.log('Tags getStaticProps: Starting filter, checking', beforeFilterCount, 'blocks')
-                console.log('Tags getStaticProps: Looking for propertyId:', propertyToFilterId, 'with value:', filteredValue)
-
-                // Debug first few blocks to see their structure
-                const sampleBlocks = queryResults.blockIds.slice(0, 3).map(id => {
-                  const block = recordMap.block[id]?.value as { properties?: any } | undefined
-                  return {
-                    id,
-                    hasProperties: !!block?.properties,
-                    tagValue: block?.properties?.[propertyToFilterId]
-                  }
-                })
-                console.log('Tags getStaticProps: Sample blocks:', sampleBlocks)
+                // Helper to get block properties (handles nested structure: block.value.value.properties)
+                const getBlockProperties = (id: string): any => {
+                  const blockData = recordMap.block[id] as any
+                  return blockData?.value?.value?.properties
+                }
 
                 const filteredBlockIds = queryResults.blockIds.filter((id) => {
-                  const block = recordMap.block[id]?.value as { properties?: any } | undefined
-                  if (!block || !block.properties) {
+                  const properties = getBlockProperties(id)
+                  if (!properties) {
                     return false
                   }
 
-                  const value = block.properties[propertyToFilterId]?.[0]?.[0]
+                  const value = properties[propertyToFilterId]?.[0]?.[0]
                   if (!value) {
                     return false
                   }
@@ -149,17 +112,13 @@ export const getStaticProps = async (context) => {
                   return true
                 })
 
-                // Update the query results
                 queryResults.blockIds = filteredBlockIds
-                console.log('Tags getStaticProps: blockIds after filter:', filteredBlockIds.length, '(was:', beforeFilterCount, ')')
 
                 // Also need to update the collection view block's content to match
                 // because react-notion-x renders based on block content, not queryResults
                 if (galleryBlockValue?.id && recordMap.block[galleryBlockValue.id]?.value) {
                   const galleryBlock = recordMap.block[galleryBlockValue.id].value as any
-                  console.log('Tags getStaticProps: galleryBlock content before:', galleryBlock.content?.length)
                   galleryBlock.content = filteredBlockIds
-                  console.log('Tags getStaticProps: galleryBlock content after:', galleryBlock.content?.length)
                 }
               }
             }
@@ -177,29 +136,18 @@ export const getStaticProps = async (context) => {
     }
   } catch (err) {
     console.error('page error', domain, rawTagName, err)
-
-    // we don't want to publish the error version of this page, so
-    // let next.js know explicitly that incremental SSG failed
     throw err
   }
 }
 
 export async function getStaticPaths() {
-  console.log('Tags getStaticPaths: starting')
-  console.log('Tags getStaticPaths: isDev:', isDev)
-  console.log('Tags getStaticPaths: NODE_ENV:', process.env.NODE_ENV)
-
   if (!isDev) {
     const props = await resolveNotionPage(domain, rootNotionPageId)
 
     if ((props as any).recordMap) {
       const recordMap = (props as any).recordMap as ExtendedRecordMap
-      // Get collection data - structure is { spaceId, value: { value: collection, role } }
       const collectionData = Object.values(recordMap.collection)[0] as any
-      // Access schema at collectionData.value.value.schema
       const schema = collectionData?.value?.value?.schema
-
-      console.log('Tags getStaticPaths: schema found:', !!schema)
 
       if (schema) {
         const propertyToFilter = Object.entries(schema).find(
@@ -208,16 +156,12 @@ export async function getStaticPaths() {
         )
         const propertyToFilterSchema = propertyToFilter?.[1] as { options?: { value: string }[] } | undefined
 
-        console.log('Tags getStaticPaths: tags property found:', !!propertyToFilter)
-        console.log('Tags getStaticPaths: tags options count:', propertyToFilterSchema?.options?.length || 0)
-
         if (propertyToFilterSchema?.options) {
           const paths = (propertyToFilterSchema.options)
             .map((option) => normalizeTitle(option.value))
             .filter(Boolean)
             .map((tag) => ({params: {tagName: tag}}))
 
-          console.log('Tags getStaticPaths: generated paths:', paths)
           return {
             paths,
             fallback: true
@@ -235,94 +179,89 @@ export async function getStaticPaths() {
 
 export default function NotionTagsPage(props) {
   // Client-side filtering fallback for dev mode
-  if (typeof window !== 'undefined' && props.recordMap && props.tagsPage) {
-    const recordMap = props.recordMap as ExtendedRecordMap
-    const tagName = (props as any).propertyToFilterName || window.location.pathname.split('/').pop()
+  const [filteredProps, setFilteredProps] = React.useState(props)
+  const hasFiltered = React.useRef(false)
 
-    console.log('NotionTagsPage: tagName from props or URL:', tagName)
+  React.useEffect(() => {
+    if (hasFiltered.current) return
 
-    if (tagName) {
-      const normalizedTag = normalizeTitle(tagName)
+    if (props.recordMap && props.tagsPage) {
+      hasFiltered.current = true
+      const recordMap = props.recordMap as ExtendedRecordMap
+      let tagName = (props as any).propertyToFilterName
+      if (!tagName && typeof window !== 'undefined') {
+        const pathParts = window.location.pathname.split('/')
+        const lastPart = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2]
+        tagName = decodeURIComponent(lastPart || '')
+      }
 
-      // Find the Tags property ID from schema
-      const collectionData = Object.values(recordMap.collection)[0] as any
-      const schema = collectionData?.value?.value?.schema
+      if (tagName) {
+        const normalizedTag = normalizeTitle(tagName)
+        const collectionData = Object.values(recordMap.collection)[0] as any
+        const schema = collectionData?.value?.value?.schema
 
-      console.log('NotionTagsPage: schema found:', !!schema)
-
-      if (schema) {
-        const tagsProperty = Object.entries(schema).find(([_, prop]: [string, any]) =>
-          prop?.name?.toLowerCase() === 'tags'
-        )
-        const propertyToFilterId = tagsProperty?.[0]
-
-        console.log('NotionTagsPage: tagsProperty found:', !!tagsProperty, 'propertyId:', propertyToFilterId)
-
-        if (propertyToFilterId) {
-          console.log('Client-side filtering: tag:', normalizedTag, 'propertyId:', propertyToFilterId)
-
-          // Find all blocks that might contain the collection
-          // The collection could be in different block types
-          const allBlocks = Object.entries(recordMap.block)
-          console.log('NotionTagsPage: Total blocks:', allBlocks.length)
-
-          // Look for blocks that have content array (these could be collection containers)
-          const blocksWithContent = allBlocks.filter(([_, block]: [string, any]) =>
-            block?.value?.content && Array.isArray(block?.value?.content)
+        if (schema) {
+          const tagsProperty = Object.entries(schema).find(([_, prop]: [string, any]) =>
+            prop?.name?.toLowerCase() === 'tags'
           )
-          console.log('NotionTagsPage: blocks with content:', blocksWithContent.length)
+          const propertyToFilterId = tagsProperty?.[0]
 
-          // Log first few blocks to understand structure
-          allBlocks.slice(0, 5).forEach(([blockId, block]: [string, any]) => {
-            console.log('NotionTagsPage: Sample block', blockId, 'type:', block?.value?.type, 'has content:', !!block?.value?.content)
-          })
+          if (propertyToFilterId) {
+            const collectionId = Object.keys(recordMap.collection)[0]
+            const collectionViewId = Object.keys(recordMap.collection_view)[0]
 
-          // The collection is usually in the collection_query results
-          // Let's look at collection_query to find the posts
-          const collectionId = Object.keys(recordMap.collection)[0]
-          const collectionViewId = Object.keys(recordMap.collection_view)[0]
-          const queryResults = recordMap.collection_query?.[collectionId]?.[collectionViewId]
+            const query = recordMap.collection_query?.[collectionId]?.[collectionViewId]
+            const queryResults = query?.collection_group_results ?? query
 
-          console.log('NotionTagsPage: collectionId:', collectionId)
-          console.log('NotionTagsPage: collectionViewId:', collectionViewId)
-          console.log('NotionTagsPage: queryResults:', queryResults ? 'found' : 'missing')
+            if (queryResults?.blockIds) {
+              const originalBlockIds = [...queryResults.blockIds]
 
-          if (queryResults?.blockIds) {
-            console.log('NotionTagsPage: queryResults.blockIds count:', queryResults.blockIds.length)
+              const getBlockProperties = (id: string): any => {
+                const blockData = recordMap.block[id] as any
+                return blockData?.value?.value?.properties
+              }
 
-            const originalBlockIds = [...queryResults.blockIds]
-            const filteredBlockIds = originalBlockIds.filter((id: string) => {
-              const block = recordMap.block[id]?.value as { properties?: any } | undefined
-              const value = block?.properties?.[propertyToFilterId]?.[0]?.[0]
-              console.log('NotionTagsPage: Checking post', id, 'tag value:', value)
-              if (!value) return false
-              const values = value.split(',')
-              const hasTag = values.find((v: string) => normalizeTitle(v) === normalizedTag)
-              console.log('NotionTagsPage: Post', id, 'has tag', normalizedTag, ':', !!hasTag)
-              return hasTag
-            })
+              const filteredBlockIds = originalBlockIds.filter((id: string) => {
+                const properties = getBlockProperties(id)
+                const value = properties?.[propertyToFilterId]?.[0]?.[0]
+                if (!value) return false
+                const values = value.split(',')
+                return values.find((v: string) => normalizeTitle(v) === normalizedTag)
+              })
 
-            console.log('Client-side filtering: original posts:', originalBlockIds.length, 'filtered:', filteredBlockIds.length)
+              if (filteredBlockIds.length !== originalBlockIds.length || filteredBlockIds.length === 0) {
+                const newRecordMap = {
+                  ...recordMap,
+                  collection_query: {
+                    ...recordMap.collection_query,
+                    [collectionId]: {
+                      ...recordMap.collection_query?.[collectionId],
+                      [collectionViewId]: {
+                        ...query,
+                        ...(query?.collection_group_results
+                          ? {
+                              collection_group_results: {
+                                ...query.collection_group_results,
+                                blockIds: filteredBlockIds
+                              }
+                            }
+                          : { blockIds: filteredBlockIds })
+                      }
+                    }
+                  }
+                }
 
-            // Update the query results
-            queryResults.blockIds = filteredBlockIds
-            console.log('NotionTagsPage: Updated queryResults.blockIds:', queryResults.blockIds.length)
-
-            // Also need to find and update the block that contains these as content
-            // Look for the collection block (usually the one with the collection_id)
-            const collectionBlock = Object.values(recordMap.block).find((block: any) =>
-              block?.value?.collection_id === collectionId
-            ) as any
-
-            if (collectionBlock?.value?.content) {
-              console.log('NotionTagsPage: Found collection block, updating content from', collectionBlock.value.content.length, 'to', filteredBlockIds.length)
-              collectionBlock.value.content = filteredBlockIds
+                setFilteredProps({
+                  ...props,
+                  recordMap: newRecordMap
+                })
+              }
             }
           }
         }
       }
     }
-  }
+  }, [props])
 
-  return <NotionPage {...props} />
+  return <NotionPage {...filteredProps} />
 }

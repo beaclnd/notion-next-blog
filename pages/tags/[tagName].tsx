@@ -1,6 +1,6 @@
 import React from 'react'
 import omit from 'lodash.omit'
-import { Collection, CollectionView, ExtendedRecordMap } from 'notion-types'
+import { CollectionView, ExtendedRecordMap } from 'notion-types'
 import { normalizeTitle } from 'notion-utils'
 
 import { NotionPage } from '@/components/NotionPage'
@@ -201,7 +201,7 @@ export default function NotionTagsPage(props) {
         const schema = collectionData?.value?.value?.schema
 
         if (schema) {
-          const tagsProperty = Object.entries(schema).find(([_, prop]: [string, any]) =>
+          const tagsProperty = Object.entries(schema).find(([, prop]: [string, any]) =>
             prop?.name?.toLowerCase() === 'tags'
           )
           const propertyToFilterId = tagsProperty?.[0]
